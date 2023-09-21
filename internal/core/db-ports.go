@@ -22,3 +22,11 @@ type EntryRepo interface {
 	GetbyID(ctx context.Context, accID int64, entryID int64) (*models.Entry, error)
 	GetPage(ctx context.Context, accID int64, limit int16, offset int16) ([]*models.Entry, error)
 }
+
+type TransferRepo interface {
+	Insert(ctx context.Context, transfer *models.Transfer) (int64, error)
+	GetByID(ctx context.Context, transferID int64) (*models.Transfer, error)
+	GetPageTransfersFromAcc(ctx context.Context, fromAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
+	GetPageTransfersToAcc(ctx context.Context, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
+	GetPageTransfers(ctx context.Context, fromAccID int64, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
+}
