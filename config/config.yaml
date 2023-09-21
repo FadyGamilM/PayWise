@@ -4,4 +4,10 @@ postgresdb:
   password: "paywise"
   dbname: "paywisedb"
   sslmode: "disable"
-  
+
+testpostgresdb:
+  host: "localhost:2345"
+  user: "paywise"
+  password: "paywise"
+  dbname: "paywisedbtest"
+  sslmode: "disable"

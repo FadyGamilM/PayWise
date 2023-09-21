@@ -4,8 +4,8 @@ import "time"
 
 type Transfer struct {
 	ID            int64     `json:"id"`
-	ToAccountID   int64     `json:"to_account_id"`
-	FromAccountID int64     `json:"from_account_id"`
+	ToAccountID   int64     `json:"to_account"`
+	FromAccountID int64     `json:"from_account"`
 	Amount        float64   `json:"amount"`
 	Removed       bool      `json:"removed"`
 	CreatedAt     time.Time `json:"created_at"`

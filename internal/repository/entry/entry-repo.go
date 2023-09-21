@@ -12,7 +12,7 @@ const (
 	INSERT_QUERY string = `
 		INSERT INTO entries (account_id, amount)
 		VALUES ($1, $2)
-		RETURNING id
+		RETURNING id, account_id, amount
 	`
 
 	GET_ALL_QUERY string = `
@@ -46,14 +46,14 @@ func New(tx *sql.Tx) core.EntryRepo {
 	}
 }
 
-func (er *entryRepo) Insert(ctx context.Context, entry *models.Entry) (int64, error) {
-	var insertedEntryID int64
-	if err := er.tx.QueryRowContext(ctx, INSERT_QUERY, entry.AccountID, entry.Amount).Scan(&insertedEntryID); err != nil {
+func (er *entryRepo) Insert(ctx context.Context, entry *models.Entry) (*models.Entry, error) {
+	createdEntry := new(models.Entry)
+	if err := er.tx.QueryRowContext(ctx, INSERT_QUERY, entry.AccountID, entry.Amount).Scan(&createdEntry.ID, &createdEntry.AccountID, &createdEntry.Amount); err != nil {
 		log.Printf("error trying to isnert an entry => %v \n", err)
-		return -1, err
+		return nil, err
 	}
 
-	return insertedEntryID, nil
+	return createdEntry, nil
 }
 
 func (er *entryRepo) Get(ctx context.Context, accID int64) ([]*models.Entry, error) {

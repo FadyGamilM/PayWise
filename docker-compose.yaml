@@ -10,5 +10,13 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+  postgres_test:
+    image: postgres:14
+    environment: 
+      POSTGRES_USER: paywise
+      POSTGRES_PASSWORD: paywise
+      POSTGRES_DB: paywisedbtest
+    ports:
+      - "2345:5432"
 volumes:
   pgdata:

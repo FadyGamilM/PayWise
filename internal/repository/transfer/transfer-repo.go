@@ -21,50 +21,50 @@ func New(tx *sql.Tx) core.TransferRepo {
 const (
 	INSERT_TRANSFER_QUERY string = `
 		INSERT INTO transfers 
-		(to_account_id, from_account_id, amount)
+		(to_account, from_account, amount)
 		VALUES($1, $2, $3)
-		RETURNING id
+		RETURNING id, to_account, from_account, amount
 	`
 
 	GET_BY_TRANSFER_ID_QUERY string = `
-		SELECT id, to_account_id, from_account_id, amount 
+		SELECT id, to_account, from_account, amount 
 		FROM transfers 
 		WHERE id = $1
 	`
 
 	GET_ALL_TRANSFERS_FROM_ACCOUNT_QUERY_IN_PAGES = `
-		SELECT id, to_account_id, from_account_id, amount 
+		SELECT id, to_account, from_account, amount 
 		FROM transfers 
-		WHERE  from_account_id = $1
+		WHERE  from_account = $1
 		LIMIT $2
 		OFFSET $3
 	`
 
 	GET_ALL_TRANSFERS_TO_ACCOUNT_QUERY_IN_PAGES = `
-		SELECT id, to_account_id, from_account_id, amount 
+		SELECT id, to_account, from_account, amount 
 		FROM transfers 
-		WHERE  to_account_id = $1
+		WHERE  to_account = $1
 		LIMIT $2
 		OFFSET $3
 	`
 
 	GET_ALL_TRANSFERS_BETWEEN_TWO_ACCOUNTS_QUERY_IN_PAGES = `
-		SELECT id, to_account_id, from_account_id, amount 
+		SELECT id, to_account, from_account, amount 
 		FROM transfers 
-		WHERE  to_account_id = $1 AND from_account_id = $2
+		WHERE  to_account = $1 AND from_account = $2
 		LIMIT $3
 		OFFSET $4
 	`
 )
 
-func (tr *transferRepo) Insert(ctx context.Context, transfer *models.Transfer) (int64, error) {
-	var insertedTransferID int64
-	if err := tr.tx.QueryRowContext(ctx, INSERT_TRANSFER_QUERY, transfer.ToAccountID, transfer.FromAccountID, transfer.Amount).Scan(&insertedTransferID); err != nil {
+func (tr *transferRepo) Insert(ctx context.Context, transfer *models.Transfer) (*models.Transfer, error) {
+	createdTransfer := new(models.Transfer)
+	if err := tr.tx.QueryRowContext(ctx, INSERT_TRANSFER_QUERY, transfer.ToAccountID, transfer.FromAccountID, transfer.Amount).Scan(&createdTransfer.ID, &createdTransfer.ToAccountID, &createdTransfer.FromAccountID, &createdTransfer.Amount); err != nil {
 		log.Printf("error trying to scan the inserted transfer id => %v \n", err)
-		return -1, err
+		return nil, err
 	}
 
-	return insertedTransferID, nil
+	return createdTransfer, nil
 }
 
 func (tr *transferRepo) GetByID(ctx context.Context, transferID int64) (*models.Transfer, error) {

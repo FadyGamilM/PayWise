@@ -12,7 +12,7 @@ const (
 	INSERT_QUERY string = `
 		INSERT INTO accounts (owner_name, balance, currency) 
 		VALUES ($1, $2, $3)
-		RETURNING id
+		RETURNING id, owner_name, balance, currency
 	`
 
 	GET_QUERY string = `
@@ -75,16 +75,16 @@ func New(tx *sql.Tx) core.AccountRepo {
 
 // TODO (1) => configure the options
 // TODO (2) => build a database layer custom errors
-func (ar *accountRepo) Insert(ctx context.Context, acc *models.Account) (int64, error) {
+func (ar *accountRepo) Insert(ctx context.Context, acc *models.Account) (*models.Account, error) {
 	// the repo logic
-	var insertedAccID int64
-	if err := ar.tx.QueryRowContext(ctx, INSERT_QUERY, acc.OwnerName, acc.Balance, acc.Currency).Scan(&insertedAccID); err != nil {
+	createdAcc := new(models.Account)
+	if err := ar.tx.QueryRowContext(ctx, INSERT_QUERY, acc.OwnerName, acc.Balance, acc.Currency).Scan(&createdAcc.ID, &createdAcc.OwnerName, &createdAcc.Balance, &createdAcc.Currency); err != nil {
 		log.Printf("error trying to isnert an account => %v \n", err)
-		return -1, err
+		return nil, err
 	}
 
 	// return the result
-	return insertedAccID, nil
+	return createdAcc, nil
 }
 
 func (ar *accountRepo) Get(ctx context.Context) ([]*models.Account, error) {

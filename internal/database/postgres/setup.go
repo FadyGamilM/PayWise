@@ -36,3 +36,28 @@ func Setup() (*sql.DB, error) {
 
 	return db, nil
 }
+
+func SetupTest() (*sql.DB, error) {
+	configs, err := config.LoadPostgresTestConfig()
+
+	// construct the conn string
+	dsn := url.URL{
+		Scheme: "postgres",
+		Host:   configs.Testpostgresdb.Host,
+		User:   url.UserPassword(configs.Testpostgresdb.User, configs.Testpostgresdb.Password),
+		Path:   configs.Testpostgresdb.Dbname,
+	}
+
+	q := dsn.Query()
+	q.Add("sslmode", configs.Testpostgresdb.Sslmode)
+
+	dsn.RawQuery = q.Encode()
+
+	db, err := sql.Open("pgx", dsn.String())
+	if err != nil {
+		fmt.Println("error trying to open a postgres connection", err)
+		return nil, err
+	}
+
+	return db, nil
+}
