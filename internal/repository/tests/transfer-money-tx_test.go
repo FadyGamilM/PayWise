@@ -3,7 +3,11 @@ package tests
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"log"
 	"net/url"
+	"paywise/internal/models"
+	"paywise/internal/repository/account"
 	"paywise/internal/repository/transactions"
 	"testing"
 
@@ -17,6 +21,9 @@ import (
 var (
 	txStore = new(transactions.TxStore)
 	tx      = new(sql.Tx)
+	txKey   = struct{}{}
+	toAcc   = new(models.Account)
+	fromAcc = new(models.Account)
 )
 
 func TestTransferMoneyTx(t *testing.T) {
@@ -46,6 +53,30 @@ func TestTransferMoneyTx(t *testing.T) {
 		t.Fatalf("error trying to set the tx instance for test purpose : %v ", err.Error())
 	}
 
+	accsPreparation := make(chan string)
+	go func() {
+		accRepo := account.New(tx)
+		createdToAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "mayar", Balance: float64(150), Currency: models.EUR})
+		if err != nil {
+			asserts.FailNowf("failed while creating a to account ", err.Error())
+		}
+		createdFromAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "samy", Balance: float64(100), Currency: models.EUR})
+		if err != nil {
+			asserts.FailNowf("failed while creating a from account ", err.Error())
+		}
+
+		toAcc = createdToAcc
+		fromAcc = createdFromAcc
+
+		tx.Commit()
+
+		accsPreparation <- "done creating the two accounts"
+	}()
+
+	<-accsPreparation
+
+	log.Println("the to => ", toAcc.ID, " the from => ", fromAcc.ID)
+
 	results := make(chan *transactions.TxTransferMoneyResult)
 	errs := make(chan error)
 
@@ -53,10 +84,11 @@ func TestTransferMoneyTx(t *testing.T) {
 	amountToTransfer := float64(10)
 
 	for i := 0; i < concurrent_Txs; i++ {
+		ctx := context.WithValue(context.Background(), txKey, fmt.Sprintf("tx.(%v)", i))
 		go func() {
-			txResult, err := txStore.TransferMoneyTX(context.Background(), &transactions.TxTransferMoneyArgs{
-				FromAccountID: int64(1),
-				ToAccountID:   int64(2),
+			txResult, err := txStore.TransferMoneyTX(ctx, &transactions.TxTransferMoneyArgs{
+				FromAccountID: fromAcc.ID,
+				ToAccountID:   toAcc.ID,
 				Amount:        amountToTransfer,
 			})
 			results <- txResult
@@ -67,19 +99,23 @@ func TestTransferMoneyTx(t *testing.T) {
 	for i := 0; i < concurrent_Txs; i++ {
 		txResult := <-results
 		transfer := txResult.Transfer
-		asserts.Equal(int64(1), transfer.FromAccountID)
-		asserts.Equal(int64(2), transfer.ToAccountID)
+		asserts.Equal(fromAcc.ID, transfer.FromAccountID) // 1
+		asserts.Equal(toAcc.ID, transfer.ToAccountID)     // 2
 		asserts.Equal(amountToTransfer, transfer.Amount)
 		asserts.NotZero(transfer.ID)
 
 		toEntry := txResult.ToEntry
-		asserts.Equal(int64(2), toEntry.AccountID)
-		asserts.Equal(amountToTransfer, toEntry.Amount)
+		asserts.Equal(toAcc.ID, toEntry.AccountID)      // 2
+		asserts.Equal(amountToTransfer, toEntry.Amount) // 1
 
 		fromEntry := txResult.FromEntry
-		asserts.Equal(int64(1), fromEntry.AccountID)
+		asserts.Equal(fromAcc.ID, fromEntry.AccountID) // 1
 		asserts.Equal(-amountToTransfer, fromEntry.Amount)
 		asserts.NotZero(fromEntry.ID)
+
+		// toAccount := txResult.ToAccount
+		// asserts.NotEmpty(toAccount)
+		// asserts.Equal(toAccount.ID, int64(2)) //2
 
 	}
 

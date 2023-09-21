@@ -3,6 +3,7 @@ package transactions
 import (
 	"context"
 	"database/sql"
+	"log"
 	"paywise/internal/models"
 	entryRepository "paywise/internal/repository/entry"
 	transferRepository "paywise/internal/repository/transfer"
@@ -22,6 +23,8 @@ type TxTransferMoneyResult struct {
 	FromAccount *models.Account  `json:"from_account"`
 }
 
+var txKey = struct{}{}
+
 func (txStore *TxStore) TransferMoneyTX(ctx context.Context, args *TxTransferMoneyArgs) (*TxTransferMoneyResult, error) {
 	txResult := new(TxTransferMoneyResult)
 	_ = txStore.execTransaction(ctx, func(tx *sql.Tx) error {
@@ -31,9 +34,12 @@ func (txStore *TxStore) TransferMoneyTX(ctx context.Context, args *TxTransferMon
 		transferRepo := transferRepository.New(tx)
 		var err error
 
+		txNumber := ctx.Value(txKey)
+
 		// define a result instance to update it through the transaction
 
 		// create a transfer record for this money transaction operation
+		log.Printf("[%v] | creating a transfer record \n", txNumber)
 		transfer := new(models.Transfer)
 		transfer.ToAccountID = args.ToAccountID
 		transfer.FromAccountID = args.FromAccountID
@@ -44,6 +50,7 @@ func (txStore *TxStore) TransferMoneyTX(ctx context.Context, args *TxTransferMon
 		}
 
 		// create a from-entry record which represents the money is withdrawn from the from-account
+		log.Printf("[%v] | creating a from-entry record \n", txNumber)
 		fromEntry := new(models.Entry)
 		fromEntry.AccountID = args.FromAccountID
 		fromEntry.Amount = -args.Amount
@@ -53,6 +60,7 @@ func (txStore *TxStore) TransferMoneyTX(ctx context.Context, args *TxTransferMon
 		}
 
 		// create a to-entry record which represents the money
+		log.Printf("[%v] | creating a to-entry record \n", txNumber)
 		toEntry := new(models.Entry)
 		toEntry.AccountID = args.ToAccountID
 		toEntry.Amount = args.Amount
