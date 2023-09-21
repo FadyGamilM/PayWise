@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS transfers(
 	id BIGSERIAL PRIMARY KEY,
   	to_account BIGINT REFERENCES accounts(id) ON DELETE CASCADE,
   	from_account BIGINT REFERENCES accounts(id) ON DELETE CASCADE,
-  	amount DECIMAL Not NULL CHECK(Amount > 0),
+  	amount DECIMAL Not NULL CHECK(Amount >= 0),
   	removed BOOLEAN Not NULL DEFAULT FALSE,
 	created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
 	updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
