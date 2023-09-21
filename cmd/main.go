@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"paywise/internal/database/postgres"
-	accRepo "paywise/internal/repository/account"
 	"time"
 )
 
@@ -18,7 +16,7 @@ func main() {
 
 	db.Ping()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 
 	defer cancel()
 
@@ -35,13 +33,13 @@ func main() {
 
 	// log.Println("id : ", accID)
 
-	account, err := accRepo.GetByID(ctx, db, 5)
-	if err != nil {
-		fmt.Errorf("error ==> ", err)
-	}
-	log.Println("id : ", account.ID)
-	log.Println("ownername : ", account.OwnerName)
-	log.Println("balance : ", account.Balance)
+	// account, err := accRepo.GetByID(ctx, db, 5)
+	// if err != nil {
+	// 	fmt.Errorf("error ==> ", err)
+	// }
+	// log.Println("id : ", account.ID)
+	// log.Println("ownername : ", account.OwnerName)
+	// log.Println("balance : ", account.Balance)
 
 	// limit := 2
 	// offset := 2
@@ -50,14 +48,14 @@ func main() {
 	// 	log.Println(acc.OwnerName)
 	// }
 
-	accRepo.Delete(ctx, db, 5)
-	log.Println("deleted :D")
+	// accRepo.Delete(ctx, db, 5)
+	// log.Println("deleted :D")
 
-	account, err = accRepo.GetByID(ctx, db, 5)
-	if err != nil {
-		fmt.Errorf("error ==> ", err)
-	}
-	log.Println("id : ", account.ID)
-	log.Println("ownername : ", account.OwnerName)
-	log.Println("balance : ", account.Balance)
+	// account, err = accRepo.GetByID(ctx, db, 5)
+	// if err != nil {
+	// 	fmt.Errorf("error ==> ", err)
+	// }
+	// log.Println("id : ", account.ID)
+	// log.Println("ownername : ", account.OwnerName)
+	// log.Println("balance : ", account.Balance)
 }
