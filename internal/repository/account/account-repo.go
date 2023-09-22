@@ -52,16 +52,19 @@ const (
 		WHERE owner_name = $1
 	`
 
+	// the update query just take a value and add it to the current balance, if we need to withdraw we need to negate the value before giving it to the query
 	UPDATE_BALANCE_BY_OWNER_NAME_QUERY string = `
 		UPDATE accounts
-		SET balance = $1
+		SET balance = balance + $1 
 		WHERE owner_name = $2
+		RETURNING id, owner_name, balance, currency
 	`
 
 	UPDATE_BALANCE_BY_ID_QUERY string = `
 		UPDATE accounts
-		SET balance = $1
+		SET balance = balance + $1
 		WHERE id = $2
+		RETURNING id, owner_name, balance, currency
 	`
 )
 
@@ -164,26 +167,39 @@ func (ar *accountRepo) GetByID(ctx context.Context, id int64) (*models.Account, 
 	return account, nil
 }
 
-func (ar *accountRepo) Update(ctx context.Context, id int64, v float64) error {
-	_, err := ar.tx.ExecContext(ctx, UPDATE_BALANCE_BY_ID_QUERY, v, id)
+func (ar *accountRepo) Update(ctx context.Context, id int64, v float64) (*models.Account, error) {
+	account := new(models.Account)
+	err := ar.tx.QueryRowContext(ctx, UPDATE_BALANCE_BY_ID_QUERY, v, id).Scan(
+		&account.ID,
+		&account.OwnerName,
+		&account.Balance,
+		&account.Currency,
+	)
 	if err != nil {
 		log.Printf("error trying to update the account => %v \n", err)
-		return err
+		return nil, err
 	}
 
 	// return the result
-	return nil
+	return account, nil
 }
 
-func (ar *accountRepo) UpdateByOwnerName(ctx context.Context, ownername string, v float64) error {
-	_, err := ar.tx.ExecContext(ctx, UPDATE_BALANCE_BY_OWNER_NAME_QUERY, v, ownername)
+func (ar *accountRepo) UpdateByOwnerName(ctx context.Context, ownername string, v float64) (*models.Account, error) {
+	account := new(models.Account)
+
+	err := ar.tx.QueryRowContext(ctx, UPDATE_BALANCE_BY_OWNER_NAME_QUERY, v, ownername).Scan(
+		&account.ID,
+		&account.OwnerName,
+		&account.Balance,
+		&account.Currency,
+	)
 	if err != nil {
 		log.Printf("error trying to update the account => %v \n", err)
-		return err
+		return nil, err
 	}
 
 	// return the result
-	return nil
+	return account, nil
 }
 
 func (ar *accountRepo) Delete(ctx context.Context, id int64) error {

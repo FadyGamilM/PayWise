@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/url"
 	"paywise/internal/models"
-	"paywise/internal/repository/account"
+	accountRepository "paywise/internal/repository/account"
 	"paywise/internal/repository/transactions"
 	"testing"
 
@@ -48,14 +48,15 @@ func TestTransferMoneyTx(t *testing.T) {
 		t.Fatalf("error trying to open a postgres connection : %v", err.Error())
 	}
 
+	// i began this transaction because i need to create two accounts for testing purpose on a separate transaction to avoid mixing with the concurrent 5 transactions i am testing
 	tx, err = txStore.DB.Begin()
 	if err != nil {
 		t.Fatalf("error trying to set the tx instance for test purpose : %v ", err.Error())
 	}
 
-	accsPreparation := make(chan string)
+	prepareAccounts := make(chan string)
 	go func() {
-		accRepo := account.New(tx)
+		accRepo := accountRepository.New(tx)
 		createdToAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "mayar", Balance: float64(150), Currency: models.EUR})
 		if err != nil {
 			asserts.FailNowf("failed while creating a to account ", err.Error())
@@ -70,10 +71,10 @@ func TestTransferMoneyTx(t *testing.T) {
 
 		tx.Commit()
 
-		accsPreparation <- "done creating the two accounts"
+		prepareAccounts <- "done creating the two accounts"
 	}()
 
-	<-accsPreparation
+	<-prepareAccounts
 
 	log.Println("the to => ", toAcc.ID, " the from => ", fromAcc.ID)
 
@@ -113,11 +114,63 @@ func TestTransferMoneyTx(t *testing.T) {
 		asserts.Equal(-amountToTransfer, fromEntry.Amount)
 		asserts.NotZero(fromEntry.ID)
 
-		// toAccount := txResult.ToAccount
-		// asserts.NotEmpty(toAccount)
-		// asserts.Equal(toAccount.ID, int64(2)) //2
+		toAccountAfterTransaction := txResult.ToAccount
+		asserts.NotEmpty(toAccountAfterTransaction)
+		asserts.Equal(toAccountAfterTransaction.ID, toAcc.ID)
 
+		fromAccountAfterTransaction := txResult.FromAccount
+		asserts.NotEmpty(fromAccountAfterTransaction)
+		asserts.Equal(fromAccountAfterTransaction.ID, fromAcc.ID)
+
+		// now we need to check the difference between the [toAcc (state before transaction)] and the toAccountAfterTransaction (state after transaction) and we expect to see that the difference in balance must be divisable by the amountToTransfer because each concurrent transaction will add 1*amountToTransfer so for 5 transaction, our toAccount will have balance = balance + 5*amount so its divisable by the amount
+		balanceDifferenceOfToAccount := toAccountAfterTransaction.Balance - toAcc.Balance
+		balanceDifferenceOfFromAccount := fromAcc.Balance - fromAccountAfterTransaction.Balance
+		// must be same
+		asserts.Equal(balanceDifferenceOfFromAccount, balanceDifferenceOfToAccount)
+
+		t.Log("the balance difference of the to-account is : $", balanceDifferenceOfToAccount)
+		t.Log("the balance difference of the from-account is : $", balanceDifferenceOfFromAccount)
+		// asserts.Equal(balanceDifferenceOfFromAccount%amountToTransfer == 0)
+		// asserts.Equal(balanceDifferenceOfFromAccount%amountToTransfer == 0)
 	}
+
+	dbInstance, err := sql.Open("pgx", dsn.String())
+	if err != nil {
+		t.Fatalf("error trying to open another postgres connection : %v", err.Error())
+	}
+	newTx, err := dbInstance.Begin()
+	if err != nil {
+		t.Fatalf("error trying to begin another transaction : %v", err.Error())
+	}
+
+	// after all conccurrent transactions, the final account balance must be decreased or increased by n * amount where n is the number of transactions
+	// afterAllTransactions := make(chan string)
+	toAccountAfterAllTransactions := new(models.Account)
+	fromAccountAfterAllTransactions := new(models.Account)
+	// go func() {
+
+	accRepo := accountRepository.New(newTx)
+	toAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), toAcc.ID)
+	if err != nil {
+		t.Log("error trying to fetch the to-account after all transactions to test its balance")
+		t.FailNow()
+	}
+
+	fromAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), fromAcc.ID)
+	if err != nil {
+		t.Log("error trying to fetch the from-account after all transactions to test its balance")
+		t.FailNow()
+	}
+
+	// afterAllTransactions <- "done fetching the accounts"
+	// }()
+
+	// <-afterAllTransactions
+
+	asserts.Equal(toAcc.Balance+(float64(concurrent_Txs)*amountToTransfer), toAccountAfterAllTransactions.Balance)
+	asserts.Equal(fromAcc.Balance-(float64(concurrent_Txs)*amountToTransfer), fromAccountAfterAllTransactions.Balance)
+
+	newTx.Commit()
 
 }
 

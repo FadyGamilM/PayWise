@@ -10,8 +10,8 @@ type AccountRepo interface {
 	Get(ctx context.Context) ([]*models.Account, error)
 	GetByID(ctx context.Context, id int64) (*models.Account, error)
 	GetPage(ctx context.Context, limit int16, offset int16) ([]*models.Account, error)
-	Update(ctx context.Context, id int64, v float64) error
-	UpdateByOwnerName(ctx context.Context, ownername string, v float64) error
+	Update(ctx context.Context, id int64, v float64) (*models.Account, error)
+	UpdateByOwnerName(ctx context.Context, ownername string, v float64) (*models.Account, error)
 	Delete(ctx context.Context, id int64) error
 	DeleteByOwnerName(ctx context.Context, ownerName string) error
 }

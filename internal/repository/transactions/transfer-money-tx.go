@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"paywise/internal/models"
+	accountRepository "paywise/internal/repository/account"
 	entryRepository "paywise/internal/repository/entry"
 	transferRepository "paywise/internal/repository/transfer"
 )
@@ -29,7 +30,7 @@ func (txStore *TxStore) TransferMoneyTX(ctx context.Context, args *TxTransferMon
 	txResult := new(TxTransferMoneyResult)
 	_ = txStore.execTransaction(ctx, func(tx *sql.Tx) error {
 		// setup the repos to run the queries within this transaction instance
-		// accRepo := accountRepository.New(tx)
+		accRepo := accountRepository.New(tx)
 		entryRepo := entryRepository.New(tx)
 		transferRepo := transferRepository.New(tx)
 		var err error
@@ -69,7 +70,18 @@ func (txStore *TxStore) TransferMoneyTX(ctx context.Context, args *TxTransferMon
 			return err
 		}
 
-		// TODO => update both accounts balance
+		log.Printf("[%v] | updating the to-account record \n", txNumber)
+		txResult.ToAccount, err = accRepo.Update(ctx, args.ToAccountID, args.Amount)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("[%v] | updating the from-account record \n", txNumber)
+		txResult.FromAccount, err = accRepo.Update(ctx, args.FromAccountID, -1*args.Amount)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 	return txResult, nil
