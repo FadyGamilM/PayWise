@@ -70,16 +70,35 @@ func (txStore *TxStore) TransferMoneyTX(ctx context.Context, args *TxTransferMon
 			return err
 		}
 
-		log.Printf("[%v] | updating the to-account record \n", txNumber)
-		txResult.ToAccount, err = accRepo.Update(ctx, args.ToAccountID, args.Amount)
-		if err != nil {
-			return err
-		}
+		// HINT : to avoid deadlock, we must ensure that our transaction acquired an exclusive lock on a correct order
+		if args.ToAccountID < args.FromAccountID {
+			log.Printf("[%v] | updating the to-account record \n", txNumber)
+			txResult.ToAccount, err = accRepo.Update(ctx, args.ToAccountID, args.Amount)
+			if err != nil {
+				return err
+			}
+			log.Printf("[%v] | the to-account record after update is %v \n", txNumber, txResult.ToAccount.Balance)
 
-		log.Printf("[%v] | updating the from-account record \n", txNumber)
-		txResult.FromAccount, err = accRepo.Update(ctx, args.FromAccountID, -1*args.Amount)
-		if err != nil {
-			return err
+			log.Printf("[%v] | updating the from-account record \n", txNumber)
+			txResult.FromAccount, err = accRepo.Update(ctx, args.FromAccountID, -1*args.Amount)
+			if err != nil {
+				return err
+			}
+			log.Printf("[%v] | the from-account record after update is %v \n", txNumber, txResult.FromAccount.Balance)
+		} else {
+			log.Printf("[%v] | updating the from-account record \n", txNumber)
+			txResult.FromAccount, err = accRepo.Update(ctx, args.FromAccountID, -1*args.Amount)
+			if err != nil {
+				return err
+			}
+			log.Printf("[%v] | the from-account record after update is %v \n", txNumber, txResult.FromAccount.Balance)
+
+			log.Printf("[%v] | updating the to-account record \n", txNumber)
+			txResult.ToAccount, err = accRepo.Update(ctx, args.ToAccountID, args.Amount)
+			if err != nil {
+				return err
+			}
+			log.Printf("[%v] | the to-account record after update is %v \n", txNumber, txResult.ToAccount.Balance)
 		}
 
 		return nil

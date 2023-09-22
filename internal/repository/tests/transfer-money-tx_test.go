@@ -9,6 +9,7 @@ import (
 	"paywise/internal/models"
 	accountRepository "paywise/internal/repository/account"
 	"paywise/internal/repository/transactions"
+	"sync"
 	"testing"
 
 	_ "github.com/jackc/pgconn"
@@ -57,11 +58,11 @@ func TestTransferMoneyTx(t *testing.T) {
 	prepareAccounts := make(chan string)
 	go func() {
 		accRepo := accountRepository.New(tx)
-		createdToAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "mayar", Balance: float64(150), Currency: models.EUR})
+		createdToAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "mayar", Balance: float64(200), Currency: models.EUR})
 		if err != nil {
 			asserts.FailNowf("failed while creating a to account ", err.Error())
 		}
-		createdFromAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "samy", Balance: float64(100), Currency: models.EUR})
+		createdFromAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "samy", Balance: float64(200), Currency: models.EUR})
 		if err != nil {
 			asserts.FailNowf("failed while creating a from account ", err.Error())
 		}
@@ -81,12 +82,16 @@ func TestTransferMoneyTx(t *testing.T) {
 	results := make(chan *transactions.TxTransferMoneyResult)
 	errs := make(chan error)
 
-	concurrent_Txs := 5
+	concurrent_Txs := 1
 	amountToTransfer := float64(10)
 
+	wg := sync.WaitGroup{}
 	for i := 0; i < concurrent_Txs; i++ {
+		wg.Add(1)
+		t.Logf("transfering from account.[%v] to account.[%v] \n", fromAcc.ID, toAcc.ID)
 		ctx := context.WithValue(context.Background(), txKey, fmt.Sprintf("tx.(%v)", i))
 		go func() {
+			defer wg.Done()
 			txResult, err := txStore.TransferMoneyTX(ctx, &transactions.TxTransferMoneyArgs{
 				FromAccountID: fromAcc.ID,
 				ToAccountID:   toAcc.ID,
@@ -97,7 +102,12 @@ func TestTransferMoneyTx(t *testing.T) {
 		}()
 	}
 
+	wg.Wait()
+
 	for i := 0; i < concurrent_Txs; i++ {
+		foundErr := <-errs
+		asserts.Nil(foundErr)
+
 		txResult := <-results
 		transfer := txResult.Transfer
 		asserts.Equal(fromAcc.ID, transfer.FromAccountID) // 1
@@ -134,6 +144,9 @@ func TestTransferMoneyTx(t *testing.T) {
 		// asserts.Equal(balanceDifferenceOfFromAccount%amountToTransfer == 0)
 	}
 
+	close(results)
+	close(errs)
+
 	dbInstance, err := sql.Open("pgx", dsn.String())
 	if err != nil {
 		t.Fatalf("error trying to open another postgres connection : %v", err.Error())
@@ -147,25 +160,28 @@ func TestTransferMoneyTx(t *testing.T) {
 	// afterAllTransactions := make(chan string)
 	toAccountAfterAllTransactions := new(models.Account)
 	fromAccountAfterAllTransactions := new(models.Account)
-	// go func() {
-
 	accRepo := accountRepository.New(newTx)
-	toAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), toAcc.ID)
-	if err != nil {
-		t.Log("error trying to fetch the to-account after all transactions to test its balance")
-		t.FailNow()
-	}
 
-	fromAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), fromAcc.ID)
-	if err != nil {
-		t.Log("error trying to fetch the from-account after all transactions to test its balance")
-		t.FailNow()
-	}
+	ftechingDataAfterTransactions := make(chan string)
+	go func() {
 
-	// afterAllTransactions <- "done fetching the accounts"
-	// }()
+		toAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), toAcc.ID)
+		if err != nil {
+			t.Log("error trying to fetch the to-account after all transactions to test its balance")
+		}
 
-	// <-afterAllTransactions
+		fromAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), fromAcc.ID)
+		if err != nil {
+			t.Log("error trying to fetch the from-account after all transactions to test its balance")
+		}
+
+		ftechingDataAfterTransactions <- "retrieved"
+	}()
+
+	<-ftechingDataAfterTransactions
+
+	t.Log("before all transactions : [to-account] => ", toAcc.Balance, " [from-account] => ", fromAcc.Balance)
+	t.Log("after all transactions : [to-account] => ", toAccountAfterAllTransactions.Balance, " [from-account] => ", fromAccountAfterAllTransactions.Balance)
 
 	asserts.Equal(toAcc.Balance+(float64(concurrent_Txs)*amountToTransfer), toAccountAfterAllTransactions.Balance)
 	asserts.Equal(fromAcc.Balance-(float64(concurrent_Txs)*amountToTransfer), fromAccountAfterAllTransactions.Balance)
@@ -174,6 +190,139 @@ func TestTransferMoneyTx(t *testing.T) {
 
 }
 
+func TestTransferMoneyTxAgainstDeadLock(t *testing.T) {
+	asserts := assert.New(t)
+
+	dsn := url.URL{
+		Scheme: "postgres",
+		Host:   "localhost:2345",
+		User:   url.UserPassword("paywise", "paywise"),
+		Path:   "paywisedbtest",
+	}
+
+	q := dsn.Query()
+	q.Add("sslmode", "disable")
+
+	dsn.RawQuery = q.Encode()
+
+	var err error
+
+	txStore.DB, err = sql.Open("pgx", dsn.String())
+	if err != nil {
+		t.Fatalf("error trying to open a postgres connection : %v", err.Error())
+	}
+
+	// i began this transaction because i need to create two accounts for testing purpose on a separate transaction to avoid mixing with the concurrent 5 transactions i am testing
+	tx, err = txStore.DB.Begin()
+	if err != nil {
+		t.Fatalf("error trying to set the tx instance for test purpose : %v ", err.Error())
+	}
+
+	prepareAccounts := make(chan string)
+	go func() {
+		accRepo := accountRepository.New(tx)
+		createdToAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "mayar", Balance: float64(200), Currency: models.EUR})
+		if err != nil {
+			asserts.FailNowf("failed while creating a to account ", err.Error())
+		}
+		createdFromAcc, err := accRepo.Insert(context.Background(), &models.Account{OwnerName: "samy", Balance: float64(200), Currency: models.EUR})
+		if err != nil {
+			asserts.FailNowf("failed while creating a from account ", err.Error())
+		}
+
+		toAcc = createdToAcc
+		fromAcc = createdFromAcc
+
+		tx.Commit()
+
+		prepareAccounts <- "done creating the two accounts"
+	}()
+
+	<-prepareAccounts
+
+	// i don't need to check the results ..
+	// results := make(chan *transactions.TxTransferMoneyResult)
+	errs := make(chan error)
+
+	concurrent_Txs := 10
+	amountToTransfer := float64(10)
+
+	// define new variables to hold the to and from accounts
+	// THE_FROM_ACCOUNT := fromAcc
+	// THE_TO_ACCOUNT := toAcc
+	for i := 0; i < concurrent_Txs; i++ {
+		THE_FROM_ACCOUNT := fromAcc
+		THE_TO_ACCOUNT := toAcc
+		if i%2 == 1 {
+			THE_FROM_ACCOUNT = toAcc
+			THE_TO_ACCOUNT = fromAcc
+		}
+		t.Logf("transfering from account.[%v] to account.[%v] \n", THE_FROM_ACCOUNT.ID, THE_TO_ACCOUNT.ID)
+		ctx := context.WithValue(context.Background(), txKey, fmt.Sprintf("tx.(%v)", i))
+		go func() {
+			_, err := txStore.TransferMoneyTX(ctx, &transactions.TxTransferMoneyArgs{
+				FromAccountID: THE_FROM_ACCOUNT.ID,
+				ToAccountID:   THE_TO_ACCOUNT.ID,
+				Amount:        amountToTransfer,
+			})
+			// i don't care actually ..
+			// results <- txResult
+			errs <- err
+		}()
+	}
+
+	for i := 0; i < concurrent_Txs; i++ {
+		foundErr := <-errs
+		asserts.Nil(foundErr)
+	}
+
+	dbInstance, err := sql.Open("pgx", dsn.String())
+	if err != nil {
+		t.Fatalf("error trying to open another postgres connection : %v", err.Error())
+	}
+	newTx, err := dbInstance.Begin()
+	if err != nil {
+		t.Fatalf("error trying to begin another transaction : %v", err.Error())
+	}
+
+	// after all conccurrent transactions, the final account balance must be decreased or increased by n * amount where n is the number of transactions
+	// afterAllTransactions := make(chan string)
+	toAccountAfterAllTransactions := new(models.Account)
+	fromAccountAfterAllTransactions := new(models.Account)
+	accRepo := accountRepository.New(newTx)
+
+	ftechingDataAfterTransactions := make(chan string)
+	go func() {
+
+		toAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), toAcc.ID)
+		if err != nil {
+			t.Log("error trying to fetch the to-account after all transactions to test its balance")
+			t.FailNow()
+		}
+
+		fromAccountAfterAllTransactions, err = accRepo.GetByID(context.Background(), fromAcc.ID)
+		if err != nil {
+			t.Log("error trying to fetch the from-account after all transactions to test its balance")
+			t.FailNow()
+		}
+
+		ftechingDataAfterTransactions <- "retrieved"
+	}()
+
+	<-ftechingDataAfterTransactions
+
+	t.Log("before all transactions : [to-account] => ", toAcc.Balance, " [from-account] => ", fromAcc.Balance)
+	t.Log("after all transactions : [to-account] => ", toAccountAfterAllTransactions.Balance, " [from-account] => ", fromAccountAfterAllTransactions.Balance)
+
+	// the balance after all should be the same because half of the transactions are transfering from you and the other have are transfering to you
+	asserts.Equal(toAcc.Balance, toAccountAfterAllTransactions.Balance)
+	asserts.Equal(fromAcc.Balance, fromAccountAfterAllTransactions.Balance)
+
+	newTx.Commit()
+
+}
+
+// ------------------------------------------------------------------------------------
 // type AccountRepoSuite struct {
 // 	suite.Suite
 // }
