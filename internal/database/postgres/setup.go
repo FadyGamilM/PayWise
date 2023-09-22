@@ -13,7 +13,7 @@ import (
 )
 
 func Setup() (*sql.DB, error) {
-	configs, err := config.LoadPostgresConfig()
+	configs, err := config.LoadPostgresConfig("./config")
 
 	// construct the conn string
 	dsn := url.URL{

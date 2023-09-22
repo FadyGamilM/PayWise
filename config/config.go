@@ -27,13 +27,13 @@ type PG_Test_Config struct {
 	}
 }
 
-func LoadPostgresConfig() (*PG_Config, error) {
+func LoadPostgresConfig(path string) (*PG_Config, error) {
 	config := new(PG_Config)
 
 	// tell viper from where to read
+	viper.AddConfigPath(path)
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("config")
 
 	// configure the feature to override the vars from the yaml file via the environment variables
 	viper.AutomaticEnv()

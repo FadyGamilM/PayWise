@@ -3,15 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"paywise/internal/database/postgres"
+	"paywise/internal/transport/rest"
+	"syscall"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
-
 	db, err := postgres.Setup()
 	if err != nil {
-		fmt.Errorf("error => ", err)
+		fmt.Errorf("error => %v", err)
 	}
 
 	db.Ping()
@@ -20,42 +25,21 @@ func main() {
 
 	defer cancel()
 
-	// acc := &models.Account{
-	// 	OwnerName: "menna",
-	// 	Balance:   float64(200),
-	// 	Currency:  models.EUR,
-	// }
+	// create a router
+	router := rest.CreateRouter()
 
-	// accID, err := accRepo.Insert(ctx, db, acc)
-	// if err != nil {
-	// 	fmt.Errorf("error ==> ", err)
-	// }
+	// create a server instance
+	server := rest.CreateServer(router)
 
-	// log.Println("id : ", accID)
+	// run the server up
+	go rest.InitServer(server)
 
-	// account, err := accRepo.GetByID(ctx, db, 5)
-	// if err != nil {
-	// 	fmt.Errorf("error ==> ", err)
-	// }
-	// log.Println("id : ", account.ID)
-	// log.Println("ownername : ", account.OwnerName)
-	// log.Println("balance : ", account.Balance)
+	// listen for shutdown or any interrupts
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// wait for it
+	<-quit
+	// if we here, thats mean we will shut down the server gracefully
+	rest.ShutdownGracefully(server)
 
-	// limit := 2
-	// offset := 2
-	// accounts, err := accRepo.GetPage(ctx, db, int16(limit), int16(offset-1)*int16(limit))
-	// for _, acc := range accounts {
-	// 	log.Println(acc.OwnerName)
-	// }
-
-	// accRepo.Delete(ctx, db, 5)
-	// log.Println("deleted :D")
-
-	// account, err = accRepo.GetByID(ctx, db, 5)
-	// if err != nil {
-	// 	fmt.Errorf("error ==> ", err)
-	// }
-	// log.Println("id : ", account.ID)
-	// log.Println("ownername : ", account.OwnerName)
-	// log.Println("balance : ", account.Balance)
 }
