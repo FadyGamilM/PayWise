@@ -1,6 +1,7 @@
 postgresdb:
   host: "localhost:5432"
   user: "paywise"
+  fady: "fady"
   password: "paywise"
   dbname: "paywisedb"
   sslmode: "disable"
