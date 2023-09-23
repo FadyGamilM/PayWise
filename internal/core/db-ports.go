@@ -50,11 +50,11 @@ type TransferRepo interface {
 }
 
 type TransferService interface {
-	Create(ctx context.Context, transfer *models.Transfer) (*models.Transfer, error)
-	GetByID(ctx context.Context, transferID int64) (*models.Transfer, error)
-	GetTransfersFromSpecificAccount(ctx context.Context, fromAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
-	GetTransfersToSpecificAccount(ctx context.Context, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
-	GetPageTransfers(ctx context.Context, fromAccID int64, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
+	Create(ctx context.Context, reqDto *CreateTransferReq) (*models.Transfer, error)
+	GetByID(ctx context.Context, reqDto *GetTransferByIdReq) (*models.Transfer, error)
+	GetTransfersFromSpecificAccount(ctx context.Context, reqDto *GetTransfersFromAccountReq) ([]*models.Transfer, error)
+	GetTransfersToSpecificAccount(ctx context.Context, reqDto *GetTransfersToAccountReq) ([]*models.Transfer, error)
+	GetPageTransfers(ctx context.Context, reqDto *GetTransfersBetweenTwoAccountsReq) ([]*models.Transfer, error)
 }
 
 type TransactionService interface {
