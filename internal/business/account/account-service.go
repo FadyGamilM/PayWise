@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"paywise/internal/core"
+	"paywise/internal/core/dtos"
 	"paywise/internal/models"
 )
 
@@ -22,7 +23,7 @@ func New(asc *AccountServiceConfig) core.AccountService {
 	}
 }
 
-func (as *accountService) Create(ctx context.Context, reqDto *core.CreateAccReq) (*models.Account, error) {
+func (as *accountService) Create(ctx context.Context, reqDto *dtos.CreateAccReq) (*models.Account, error) {
 	// convert request dto into a domain entity to pass it to the repo layer
 	acc := new(models.Account)
 	acc.OwnerName = reqDto.OwnerName
@@ -49,7 +50,7 @@ func (as *accountService) GetAll(ctx context.Context) ([]*models.Account, error)
 	return accounts, nil
 }
 
-func (as *accountService) GetByID(ctx context.Context, reqDto *core.GetAccByIdReq) (*models.Account, error) {
+func (as *accountService) GetByID(ctx context.Context, reqDto *dtos.GetAccByIdReq) (*models.Account, error) {
 	accID := reqDto.ID
 	acc, err := as.accRepo.GetByID(ctx, accID)
 	if err != nil {
@@ -59,7 +60,7 @@ func (as *accountService) GetByID(ctx context.Context, reqDto *core.GetAccByIdRe
 	return acc, nil
 }
 
-func (as *accountService) GetPage(ctx context.Context, reqDto *core.PaginateAccountsReq) ([]*models.Account, error) {
+func (as *accountService) GetPage(ctx context.Context, reqDto *dtos.PaginateAccountsReq) ([]*models.Account, error) {
 	// the service layer send to the repo layer the right calculated offset, its responsible for handling this logic
 	limit := reqDto.Limit
 	offset := (reqDto.Offset - 1) * limit
@@ -72,7 +73,7 @@ func (as *accountService) GetPage(ctx context.Context, reqDto *core.PaginateAcco
 
 }
 
-func (as *accountService) UpdateByID(ctx context.Context, reqDto *core.UpdateAccountReq) (*models.Account, error) {
+func (as *accountService) UpdateByID(ctx context.Context, reqDto *dtos.UpdateAccountReq) (*models.Account, error) {
 	updated, err := as.accRepo.Update(ctx, reqDto.ID, reqDto.Balance)
 	if err != nil {
 		log.Printf("[Account Service] | %v \n", err.Error())
@@ -81,7 +82,7 @@ func (as *accountService) UpdateByID(ctx context.Context, reqDto *core.UpdateAcc
 	return updated, nil
 }
 
-func (as *accountService) UpdateByOwnerName(ctx context.Context, reqDto *core.UpdateAccountByOwnerNameReq) (*models.Account, error) {
+func (as *accountService) UpdateByOwnerName(ctx context.Context, reqDto *dtos.UpdateAccountByOwnerNameReq) (*models.Account, error) {
 	updated, err := as.accRepo.UpdateByOwnerName(ctx, reqDto.OwnerName, reqDto.Balance)
 	if err != nil {
 		log.Printf("[Account Service] | %v \n", err.Error())
@@ -90,7 +91,7 @@ func (as *accountService) UpdateByOwnerName(ctx context.Context, reqDto *core.Up
 	return updated, nil
 }
 
-func (as *accountService) DeleteByID(ctx context.Context, reqDto *core.DeleteAccountReq) error {
+func (as *accountService) DeleteByID(ctx context.Context, reqDto *dtos.DeleteAccountReq) error {
 	err := as.accRepo.Delete(ctx, reqDto.ID)
 	if err != nil {
 		log.Printf("[Account Service] | %v \n", err.Error())
@@ -99,7 +100,7 @@ func (as *accountService) DeleteByID(ctx context.Context, reqDto *core.DeleteAcc
 	return nil
 }
 
-func (as *accountService) DeleteByOwnerName(ctx context.Context, reqDto *core.DeleteAccountByOwnerNameReq) error {
+func (as *accountService) DeleteByOwnerName(ctx context.Context, reqDto *dtos.DeleteAccountByOwnerNameReq) error {
 	err := as.accRepo.DeleteByOwnerName(ctx, reqDto.OwnerName)
 	if err != nil {
 		log.Printf("[Account Service] | %v \n", err.Error())

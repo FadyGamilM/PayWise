@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"paywise/internal/core"
+	"paywise/internal/core/dtos"
 	transactionRepo "paywise/internal/repository/transactions"
 )
 
@@ -21,7 +22,7 @@ func (tsc *TransactionServiceConfig) New() core.TransactionService {
 	}
 }
 
-func (ts *transactionService) TransferMoneyTransaction(ctx context.Context, reqDto *core.TxTransferMoneyReq) (*core.TxTransferMoneyRes, error) {
+func (ts *transactionService) TransferMoneyTransaction(ctx context.Context, reqDto *dtos.TxTransferMoneyReq) (*dtos.TxTransferMoneyRes, error) {
 	result, err := ts.txStore.TransferMoneyTX(ctx, &transactionRepo.TxTransferMoneyArgs{
 		ToAccountID:   reqDto.ToAccountID,
 		FromAccountID: reqDto.FromAccountID,
@@ -32,7 +33,7 @@ func (ts *transactionService) TransferMoneyTransaction(ctx context.Context, reqD
 		return nil, err
 	}
 
-	return &core.TxTransferMoneyRes{
+	return &dtos.TxTransferMoneyRes{
 		Transfer:    result.Transfer,
 		ToEntry:     result.ToEntry,
 		FromEntry:   result.FromEntry,

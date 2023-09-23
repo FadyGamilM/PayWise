@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"paywise/internal/core"
+	"paywise/internal/core/dtos"
 	"paywise/internal/models"
 )
 
@@ -22,7 +23,7 @@ func (tsc *TransferServiceConfig) New() core.TransferService {
 	}
 }
 
-func (ts *transferService) Create(ctx context.Context, reqDto *core.CreateTransferReq) (*models.Transfer, error) {
+func (ts *transferService) Create(ctx context.Context, reqDto *dtos.CreateTransferReq) (*models.Transfer, error) {
 	transfer, err := ts.transferRepo.Insert(ctx, &models.Transfer{
 		ToAccountID:   reqDto.ToAccountID,
 		FromAccountID: reqDto.FromAccountID,
@@ -36,7 +37,7 @@ func (ts *transferService) Create(ctx context.Context, reqDto *core.CreateTransf
 	return transfer, nil
 }
 
-func (ts *transferService) GetByID(ctx context.Context, reqDto *core.GetTransferByIdReq) (*models.Transfer, error) {
+func (ts *transferService) GetByID(ctx context.Context, reqDto *dtos.GetTransferByIdReq) (*models.Transfer, error) {
 	transfer, err := ts.transferRepo.GetByID(ctx, reqDto.TransferID)
 	if err != nil {
 		log.Printf("[SERVICE LAYER] | %v \n", err.Error())
@@ -46,7 +47,7 @@ func (ts *transferService) GetByID(ctx context.Context, reqDto *core.GetTransfer
 	return transfer, nil
 }
 
-func (ts *transferService) GetTransfersFromSpecificAccount(ctx context.Context, reqDto *core.GetTransfersFromAccountReq) ([]*models.Transfer, error) {
+func (ts *transferService) GetTransfersFromSpecificAccount(ctx context.Context, reqDto *dtos.GetTransfersFromAccountReq) ([]*models.Transfer, error) {
 	transfers, err := ts.transferRepo.GetPageTransfersFromAcc(ctx, reqDto.FromAccountID, reqDto.Limit, (reqDto.Offset-1)*reqDto.Limit)
 	if err != nil {
 		log.Printf("[SERVICE LAYER] | %v \n", err.Error())
@@ -56,7 +57,7 @@ func (ts *transferService) GetTransfersFromSpecificAccount(ctx context.Context, 
 	return transfers, nil
 }
 
-func (ts *transferService) GetTransfersToSpecificAccount(ctx context.Context, reqDto *core.GetTransfersToAccountReq) ([]*models.Transfer, error) {
+func (ts *transferService) GetTransfersToSpecificAccount(ctx context.Context, reqDto *dtos.GetTransfersToAccountReq) ([]*models.Transfer, error) {
 	transfers, err := ts.transferRepo.GetPageTransfersToAcc(ctx, reqDto.ToAccountID, reqDto.Limit, (reqDto.Offset-1)*reqDto.Limit)
 	if err != nil {
 		log.Printf("[SERVICE LAYER] | %v \n", err.Error())
@@ -66,7 +67,7 @@ func (ts *transferService) GetTransfersToSpecificAccount(ctx context.Context, re
 	return transfers, nil
 }
 
-func (ts *transferService) GetPageTransfers(ctx context.Context, reqDto *core.GetTransfersBetweenTwoAccountsReq) ([]*models.Transfer, error) {
+func (ts *transferService) GetPageTransfers(ctx context.Context, reqDto *dtos.GetTransfersBetweenTwoAccountsReq) ([]*models.Transfer, error) {
 	transfers, err := ts.transferRepo.GetPageTransfers(ctx, reqDto.FromAccountID, reqDto.ToAccountID, reqDto.Limit, (reqDto.Offset-1)*reqDto.Limit)
 	if err != nil {
 		log.Printf("[SERVICE LAYER] | %v \n", err.Error())

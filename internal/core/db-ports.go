@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"paywise/internal/core/dtos"
 	"paywise/internal/models"
 )
 
@@ -17,14 +18,14 @@ type AccountRepo interface {
 }
 
 type AccountService interface {
-	Create(ctx context.Context, reqDto *CreateAccReq) (*models.Account, error)
+	Create(ctx context.Context, reqDto *dtos.CreateAccReq) (*models.Account, error)
 	GetAll(ctx context.Context) ([]*models.Account, error)
-	GetByID(ctx context.Context, reqDto *GetAccByIdReq) (*models.Account, error)
-	GetPage(ctx context.Context, reqDto *PaginateAccountsReq) ([]*models.Account, error)
-	UpdateByID(ctx context.Context, reqDto *UpdateAccountReq) (*models.Account, error)
-	UpdateByOwnerName(ctx context.Context, reqDto *UpdateAccountByOwnerNameReq) (*models.Account, error)
-	DeleteByID(ctx context.Context, reqDto *DeleteAccountReq) error
-	DeleteByOwnerName(ctx context.Context, reqDto *DeleteAccountByOwnerNameReq) error
+	GetByID(ctx context.Context, reqDto *dtos.GetAccByIdReq) (*models.Account, error)
+	GetPage(ctx context.Context, reqDto *dtos.PaginateAccountsReq) ([]*models.Account, error)
+	UpdateByID(ctx context.Context, reqDto *dtos.UpdateAccountReq) (*models.Account, error)
+	UpdateByOwnerName(ctx context.Context, reqDto *dtos.UpdateAccountByOwnerNameReq) (*models.Account, error)
+	DeleteByID(ctx context.Context, reqDto *dtos.DeleteAccountReq) error
+	DeleteByOwnerName(ctx context.Context, reqDto *dtos.DeleteAccountByOwnerNameReq) error
 }
 
 type EntryRepo interface {
@@ -35,10 +36,10 @@ type EntryRepo interface {
 }
 
 type EntryService interface {
-	Create(ctx context.Context, entry *models.Entry) (*models.Entry, error)
-	GetAll(ctx context.Context, accID int64) ([]*models.Entry, error)
-	GetbyID(ctx context.Context, accID int64, entryID int64) (*models.Entry, error)
-	GetPage(ctx context.Context, accID int64, limit int16, offset int16) ([]*models.Entry, error)
+	Create(ctx context.Context, reqDto *dtos.CreateEntryReq) (*models.Entry, error)
+	GetAll(ctx context.Context, reqDto *dtos.GetAllEntriesOfAccountReq) ([]*models.Entry, error)
+	GetbyID(ctx context.Context, reqDto *dtos.GetEntryByIdReq) (*models.Entry, error)
+	GetPage(ctx context.Context, reqDto *dtos.GetEntriesInPage) ([]*models.Entry, error)
 }
 
 type TransferRepo interface {
@@ -50,13 +51,13 @@ type TransferRepo interface {
 }
 
 type TransferService interface {
-	Create(ctx context.Context, reqDto *CreateTransferReq) (*models.Transfer, error)
-	GetByID(ctx context.Context, reqDto *GetTransferByIdReq) (*models.Transfer, error)
-	GetTransfersFromSpecificAccount(ctx context.Context, reqDto *GetTransfersFromAccountReq) ([]*models.Transfer, error)
-	GetTransfersToSpecificAccount(ctx context.Context, reqDto *GetTransfersToAccountReq) ([]*models.Transfer, error)
-	GetPageTransfers(ctx context.Context, reqDto *GetTransfersBetweenTwoAccountsReq) ([]*models.Transfer, error)
+	Create(ctx context.Context, reqDto *dtos.CreateTransferReq) (*models.Transfer, error)
+	GetByID(ctx context.Context, reqDto *dtos.GetTransferByIdReq) (*models.Transfer, error)
+	GetTransfersFromSpecificAccount(ctx context.Context, reqDto *dtos.GetTransfersFromAccountReq) ([]*models.Transfer, error)
+	GetTransfersToSpecificAccount(ctx context.Context, reqDto *dtos.GetTransfersToAccountReq) ([]*models.Transfer, error)
+	GetPageTransfers(ctx context.Context, reqDto *dtos.GetTransfersBetweenTwoAccountsReq) ([]*models.Transfer, error)
 }
 
 type TransactionService interface {
-	TransferMoneyTransaction(ctx context.Context, reqDto *TxTransferMoneyReq) (*TxTransferMoneyRes, error)
+	TransferMoneyTransaction(ctx context.Context, reqDto *dtos.TxTransferMoneyReq) (*dtos.TxTransferMoneyRes, error)
 }

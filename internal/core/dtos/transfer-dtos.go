@@ -1,4 +1,4 @@
-package core
+package dtos
 
 type CreateTransferReq struct {
 	ToAccountID   int64   `json:"to_account_id" binding:"required, min=0"`

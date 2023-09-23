@@ -1,4 +1,4 @@
-package core
+package dtos
 
 type GetAccByOwnerNameReq struct {
 	OwnerName string `form:"owner" binding:"required"`

@@ -24,7 +24,7 @@ const (
 	GET_ENTRY_BY_ID string = `
 		SELECT id , account_id, amount
 		FROM entries
-		WHERE account_id = $1, id = $2
+		WHERE account_id = $1 AND id = $2
 	`
 	GET_ENTRIES_IN_PAGES string = `
 		SELECT id, account_id, amount 
