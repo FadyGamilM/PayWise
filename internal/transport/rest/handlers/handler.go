@@ -34,18 +34,7 @@ func (h *Handler) HandleGetAccountByID(c *gin.Context) {
 	})
 }
 
-type GetAccByOwnerNameReq struct {
-	OwnerName string `form:"owner" binding:"required"`
-}
 
-type GetAccByIdReq struct {
-	ID int64 `uri:"id" binding:"required, min"`
-}
-
-type CreateAccReq struct {
-	OwnerName string `json:"owner_name" binding:"required"`
-	Currency  string `json:"currency" binding:"required, oneof=EUR USD"`
-}
 
 func (h *Handler) HandleGetAccountByOwnerName(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{

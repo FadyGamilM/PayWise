@@ -17,14 +17,14 @@ type AccountRepo interface {
 }
 
 type AccountService interface {
-	Create(ctx context.Context, acc *models.Account) (*models.Account, error)
+	Create(ctx context.Context, reqDto *CreateAccReq) (*models.Account, error)
 	GetAll(ctx context.Context) ([]*models.Account, error)
-	GetByID(ctx context.Context, id int64) (*models.Account, error)
-	GetPage(ctx context.Context, limit int16, offset int16) ([]*models.Account, error)
-	UpdateByID(ctx context.Context, id int64, v float64) (*models.Account, error)
-	UpdateByOwnerName(ctx context.Context, ownername string, v float64) (*models.Account, error)
-	DeleteByID(ctx context.Context, id int64) error
-	DeleteByOwnerName(ctx context.Context, ownerName string) error
+	GetByID(ctx context.Context, reqDto *GetAccByIdReq) (*models.Account, error)
+	GetPage(ctx context.Context, reqDto *PaginateAccountsReq) ([]*models.Account, error)
+	UpdateByID(ctx context.Context, reqDto *UpdateAccountReq) (*models.Account, error)
+	UpdateByOwnerName(ctx context.Context, reqDto *UpdateAccountByOwnerNameReq) (*models.Account, error)
+	DeleteByID(ctx context.Context, reqDto *DeleteAccountReq) error
+	DeleteByOwnerName(ctx context.Context, reqDto *DeleteAccountByOwnerNameReq) error
 }
 
 type EntryRepo interface {
