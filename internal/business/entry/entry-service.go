@@ -16,7 +16,7 @@ type EntryServiceConfig struct {
 	EntryRepo core.EntryRepo
 }
 
-func (esc *EntryServiceConfig) New() core.EntryService {
+func New(esc *EntryServiceConfig) core.EntryService {
 	return &entryService{
 		entryRepo: esc.EntryRepo,
 	}

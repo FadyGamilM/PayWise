@@ -16,7 +16,7 @@ type TransactionServiceConfig struct {
 	TxStore *transactionRepo.TxStore
 }
 
-func (tsc *TransactionServiceConfig) New() core.TransactionService {
+func New(tsc *TransactionServiceConfig) core.TransactionService {
 	return &transactionService{
 		txStore: tsc.TxStore,
 	}

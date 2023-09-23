@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/url"
 	"paywise/config"
 
@@ -14,7 +15,10 @@ import (
 
 func Setup() (*sql.DB, error) {
 	configs, err := config.LoadPostgresConfig("./config")
-
+	if err != nil {
+		fmt.Println("error trying to load config variables", err)
+		return nil, err
+	}
 	// construct the conn string
 	dsn := url.URL{
 		Scheme: "postgres",
@@ -34,12 +38,16 @@ func Setup() (*sql.DB, error) {
 		return nil, err
 	}
 
+	log.Println("connecting to a database successfully ..")
 	return db, nil
 }
 
 func SetupTest() (*sql.DB, error) {
 	configs, err := config.LoadPostgresTestConfig()
-
+	if err != nil {
+		fmt.Println("error trying to load config variables", err)
+		return nil, err
+	}
 	// construct the conn string
 	dsn := url.URL{
 		Scheme: "postgres",

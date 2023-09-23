@@ -17,7 +17,7 @@ type TransferServiceConfig struct {
 	TransferRepo core.TransferRepo
 }
 
-func (tsc *TransferServiceConfig) New() core.TransferService {
+func  New(tsc *TransferServiceConfig) core.TransferService {
 	return &transferService{
 		transferRepo: tsc.TransferRepo,
 	}

@@ -2,19 +2,19 @@ package transfer
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"paywise/internal/core"
+	"paywise/internal/database/postgres"
 	"paywise/internal/models"
 )
 
 type transferRepo struct {
-	tx *sql.Tx
+	pg *postgres.PG
 }
 
-func New(tx *sql.Tx) core.TransferRepo {
+func New(pg postgres.DBTX) core.TransferRepo {
 	return &transferRepo{
-		tx: tx,
+		pg: &postgres.PG{DB: pg},
 	}
 }
 
@@ -59,7 +59,7 @@ const (
 
 func (tr *transferRepo) Insert(ctx context.Context, transfer *models.Transfer) (*models.Transfer, error) {
 	createdTransfer := new(models.Transfer)
-	if err := tr.tx.QueryRowContext(ctx, INSERT_TRANSFER_QUERY, transfer.ToAccountID, transfer.FromAccountID, transfer.Amount).Scan(&createdTransfer.ID, &createdTransfer.ToAccountID, &createdTransfer.FromAccountID, &createdTransfer.Amount); err != nil {
+	if err := tr.pg.DB.QueryRowContext(ctx, INSERT_TRANSFER_QUERY, transfer.ToAccountID, transfer.FromAccountID, transfer.Amount).Scan(&createdTransfer.ID, &createdTransfer.ToAccountID, &createdTransfer.FromAccountID, &createdTransfer.Amount); err != nil {
 		log.Printf("error trying to scan the inserted transfer id => %v \n", err)
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (tr *transferRepo) Insert(ctx context.Context, transfer *models.Transfer) (
 
 func (tr *transferRepo) GetByID(ctx context.Context, transferID int64) (*models.Transfer, error) {
 	transfer := new(models.Transfer)
-	if err := tr.tx.QueryRowContext(ctx, GET_BY_TRANSFER_ID_QUERY, transferID).Scan(&transfer.ID, &transfer.ToAccountID, &transfer.FromAccountID, &transfer.Amount); err != nil {
+	if err := tr.pg.DB.QueryRowContext(ctx, GET_BY_TRANSFER_ID_QUERY, transferID).Scan(&transfer.ID, &transfer.ToAccountID, &transfer.FromAccountID, &transfer.Amount); err != nil {
 		log.Printf("error trying to scan the retrieved transfer from database => %v \n", err)
 	}
 
@@ -79,7 +79,7 @@ func (tr *transferRepo) GetByID(ctx context.Context, transferID int64) (*models.
 func (tr *transferRepo) GetPageTransfersFromAcc(ctx context.Context, fromAccID int64, limit int16, offset int16) ([]*models.Transfer, error) {
 	var transfers []*models.Transfer
 
-	rows, err := tr.tx.QueryContext(ctx, GET_ALL_TRANSFERS_FROM_ACCOUNT_QUERY_IN_PAGES, fromAccID, limit, (offset-1)*limit)
+	rows, err := tr.pg.DB.QueryContext(ctx, GET_ALL_TRANSFERS_FROM_ACCOUNT_QUERY_IN_PAGES, fromAccID, limit, (offset-1)*limit)
 	if err != nil {
 		log.Printf("error trying to retrieve transfers page no.%v from account : %v to all accounts => %v \n", (offset - 1), fromAccID, err)
 		return nil, err
@@ -104,7 +104,7 @@ func (tr *transferRepo) GetPageTransfersFromAcc(ctx context.Context, fromAccID i
 func (tr *transferRepo) GetPageTransfersToAcc(ctx context.Context, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error) {
 	var transfers []*models.Transfer
 
-	rows, err := tr.tx.QueryContext(ctx, GET_ALL_TRANSFERS_TO_ACCOUNT_QUERY_IN_PAGES, toAccID, limit, (offset-1)*limit)
+	rows, err := tr.pg.DB.QueryContext(ctx, GET_ALL_TRANSFERS_TO_ACCOUNT_QUERY_IN_PAGES, toAccID, limit, (offset-1)*limit)
 	if err != nil {
 		log.Printf("error trying to retrieve transfers page no.%v to account : %v from all accounts => %v \n", (offset - 1), toAccID, err)
 		return nil, err
@@ -129,7 +129,7 @@ func (tr *transferRepo) GetPageTransfersToAcc(ctx context.Context, toAccID int64
 func (tr *transferRepo) GetPageTransfers(ctx context.Context, fromAccID int64, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error) {
 	var transfers []*models.Transfer
 
-	rows, err := tr.tx.QueryContext(ctx, GET_ALL_TRANSFERS_BETWEEN_TWO_ACCOUNTS_QUERY_IN_PAGES, toAccID, fromAccID, limit, (offset-1)*limit)
+	rows, err := tr.pg.DB.QueryContext(ctx, GET_ALL_TRANSFERS_BETWEEN_TWO_ACCOUNTS_QUERY_IN_PAGES, toAccID, fromAccID, limit, (offset-1)*limit)
 	if err != nil {
 		log.Printf("error trying to retrieve transfers page no.%v from account : %v to account %v => %v \n", (offset - 1), fromAccID, toAccID, err)
 		return nil, err

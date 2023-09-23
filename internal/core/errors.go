@@ -3,7 +3,6 @@ package core
 import (
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type AppErr string
@@ -46,14 +45,20 @@ func NewNotFoundError(resource string, idv string) ERROR {
 	}
 }
 
-func NewBadRequestError(fields ...string) ERROR {
-	var errorMsg strings.Builder
-	for _, errField := range fields {
-		errorMsg.WriteString("field " + errField + " is wrong\n")
-	}
+//	func NewBadRequestError(fields ...string) ERROR {
+//		var errorMsg strings.Builder
+//		for _, errField := range fields {
+//			errorMsg.WriteString("field " + errField + " is wrong\n")
+//		}
+//		return ERROR{
+//			Type: BAD_REQUEST_ERR,
+//			Msg:  errorMsg.String(),
+//		}
+//	}
+func NewBadRequestError() ERROR {
 	return ERROR{
 		Type: BAD_REQUEST_ERR,
-		Msg:  errorMsg.String(),
+		Msg:  "valdiation errors",
 	}
 }
 

@@ -2,9 +2,9 @@ package account
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"paywise/internal/core"
+	"paywise/internal/database/postgres"
 	"paywise/internal/models"
 )
 
@@ -69,11 +69,11 @@ const (
 )
 
 type accountRepo struct {
-	tx *sql.Tx
+	pg *postgres.PG
 }
 
-func New(tx *sql.Tx) core.AccountRepo {
-	return &accountRepo{tx: tx}
+func New(pg postgres.DBTX) core.AccountRepo {
+	return &accountRepo{pg: &postgres.PG{DB: pg}}
 }
 
 // TODO (1) => configure the options
@@ -81,7 +81,7 @@ func New(tx *sql.Tx) core.AccountRepo {
 func (ar *accountRepo) Insert(ctx context.Context, acc *models.Account) (*models.Account, error) {
 	// the repo logic
 	createdAcc := new(models.Account)
-	if err := ar.tx.QueryRowContext(ctx, INSERT_QUERY, acc.OwnerName, acc.Balance, acc.Currency).Scan(&createdAcc.ID, &createdAcc.OwnerName, &createdAcc.Balance, &createdAcc.Currency); err != nil {
+	if err := ar.pg.DB.QueryRowContext(ctx, INSERT_QUERY, acc.OwnerName, acc.Balance, acc.Currency).Scan(&createdAcc.ID, &createdAcc.OwnerName, &createdAcc.Balance, &createdAcc.Currency); err != nil {
 		log.Printf("error trying to isnert an account => %v \n", err)
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (ar *accountRepo) Insert(ctx context.Context, acc *models.Account) (*models
 
 func (ar *accountRepo) Get(ctx context.Context) ([]*models.Account, error) {
 	// the repo logic
-	rows, err := ar.tx.QueryContext(ctx, GET_QUERY)
+	rows, err := ar.pg.DB.QueryContext(ctx, GET_QUERY)
 	if err != nil {
 		log.Printf("error trying to fetch all accounts => %v \n", err)
 		return nil, err
@@ -121,7 +121,7 @@ func (ar *accountRepo) Get(ctx context.Context) ([]*models.Account, error) {
 
 func (ar *accountRepo) GetPage(ctx context.Context, limit int16, offset int16) ([]*models.Account, error) {
 	// the repo logic
-	rows, err := ar.tx.QueryContext(ctx, PAGINATE_QUERY, limit, offset)
+	rows, err := ar.pg.DB.QueryContext(ctx, PAGINATE_QUERY, limit, offset)
 	if err != nil {
 		log.Printf("error trying to fetch all accounts => %v \n", err)
 		return nil, err
@@ -151,7 +151,7 @@ func (ar *accountRepo) GetPage(ctx context.Context, limit int16, offset int16) (
 func (ar *accountRepo) GetByID(ctx context.Context, id int64) (*models.Account, error) {
 	// the repo logic
 	account := new(models.Account)
-	err := ar.tx.QueryRowContext(ctx, GET_BY_ID_QUERY, id).Scan(
+	err := ar.pg.DB.QueryRowContext(ctx, GET_BY_ID_QUERY, id).Scan(
 		&account.ID,
 		&account.OwnerName,
 		&account.Balance,
@@ -169,7 +169,7 @@ func (ar *accountRepo) GetByID(ctx context.Context, id int64) (*models.Account, 
 
 func (ar *accountRepo) Update(ctx context.Context, id int64, v float64) (*models.Account, error) {
 	account := new(models.Account)
-	err := ar.tx.QueryRowContext(ctx, UPDATE_BALANCE_BY_ID_QUERY, v, id).Scan(
+	err := ar.pg.DB.QueryRowContext(ctx, UPDATE_BALANCE_BY_ID_QUERY, v, id).Scan(
 		&account.ID,
 		&account.OwnerName,
 		&account.Balance,
@@ -187,7 +187,7 @@ func (ar *accountRepo) Update(ctx context.Context, id int64, v float64) (*models
 func (ar *accountRepo) UpdateByOwnerName(ctx context.Context, ownername string, v float64) (*models.Account, error) {
 	account := new(models.Account)
 
-	err := ar.tx.QueryRowContext(ctx, UPDATE_BALANCE_BY_OWNER_NAME_QUERY, v, ownername).Scan(
+	err := ar.pg.DB.QueryRowContext(ctx, UPDATE_BALANCE_BY_OWNER_NAME_QUERY, v, ownername).Scan(
 		&account.ID,
 		&account.OwnerName,
 		&account.Balance,
@@ -204,7 +204,7 @@ func (ar *accountRepo) UpdateByOwnerName(ctx context.Context, ownername string, 
 
 func (ar *accountRepo) Delete(ctx context.Context, id int64) error {
 
-	_, err := ar.tx.ExecContext(ctx, DELETE_BY_ID_QUERY, id)
+	_, err := ar.pg.DB.ExecContext(ctx, DELETE_BY_ID_QUERY, id)
 	if err != nil {
 		log.Printf("error trying to delete the account => %v \n", err)
 		return err
@@ -215,7 +215,7 @@ func (ar *accountRepo) Delete(ctx context.Context, id int64) error {
 }
 
 func (ar *accountRepo) DeleteByOwnerName(ctx context.Context, ownerName string) error {
-	_, err := ar.tx.ExecContext(ctx, DELETE_BY_OWNER_NAME_QUERY, ownerName)
+	_, err := ar.pg.DB.ExecContext(ctx, DELETE_BY_OWNER_NAME_QUERY, ownerName)
 	if err != nil {
 		log.Printf("error trying to delete the account => %v \n", err)
 		return err

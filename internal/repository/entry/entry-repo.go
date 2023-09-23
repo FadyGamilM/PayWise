@@ -2,9 +2,9 @@ package entry
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"paywise/internal/core"
+	"paywise/internal/database/postgres"
 	"paywise/internal/models"
 )
 
@@ -37,18 +37,18 @@ const (
 )
 
 type entryRepo struct {
-	tx *sql.Tx
+	pg *postgres.PG
 }
 
-func New(tx *sql.Tx) core.EntryRepo {
+func New(pg postgres.DBTX) core.EntryRepo {
 	return &entryRepo{
-		tx: tx,
+		pg: &postgres.PG{DB: pg},
 	}
 }
 
 func (er *entryRepo) Insert(ctx context.Context, entry *models.Entry) (*models.Entry, error) {
 	createdEntry := new(models.Entry)
-	if err := er.tx.QueryRowContext(ctx, INSERT_QUERY, entry.AccountID, entry.Amount).Scan(&createdEntry.ID, &createdEntry.AccountID, &createdEntry.Amount); err != nil {
+	if err := er.pg.DB.QueryRowContext(ctx, INSERT_QUERY, entry.AccountID, entry.Amount).Scan(&createdEntry.ID, &createdEntry.AccountID, &createdEntry.Amount); err != nil {
 		log.Printf("error trying to isnert an entry => %v \n", err)
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (er *entryRepo) Insert(ctx context.Context, entry *models.Entry) (*models.E
 func (er *entryRepo) Get(ctx context.Context, accID int64) ([]*models.Entry, error) {
 	var entries []*models.Entry
 
-	rows, err := er.tx.QueryContext(ctx, GET_ALL_QUERY, accID)
+	rows, err := er.pg.DB.QueryContext(ctx, GET_ALL_QUERY, accID)
 	if err != nil {
 		log.Printf("error trying to retrieve all entries of account : %v => %v \n", accID, err)
 		return nil, err
@@ -82,7 +82,7 @@ func (er *entryRepo) Get(ctx context.Context, accID int64) ([]*models.Entry, err
 
 func (er *entryRepo) GetbyID(ctx context.Context, accID int64, entryID int64) (*models.Entry, error) {
 	entry := new(models.Entry)
-	if err := er.tx.QueryRowContext(ctx, GET_ENTRY_BY_ID, accID, entryID).Scan(&entry.ID, &entry.AccountID, &entry.Amount); err != nil {
+	if err := er.pg.DB.QueryRowContext(ctx, GET_ENTRY_BY_ID, accID, entryID).Scan(&entry.ID, &entry.AccountID, &entry.Amount); err != nil {
 		log.Printf("error trying to scan the retrieved entry with id : %v for account : %v  from database => %v \n", entryID, accID, err)
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (er *entryRepo) GetbyID(ctx context.Context, accID int64, entryID int64) (*
 func (er *entryRepo) GetPage(ctx context.Context, accID int64, limit int16, offset int16) ([]*models.Entry, error) {
 	var entries []*models.Entry
 
-	rows, err := er.tx.QueryContext(ctx, GET_ENTRIES_IN_PAGES, accID, limit, (offset-1)*limit)
+	rows, err := er.pg.DB.QueryContext(ctx, GET_ENTRIES_IN_PAGES, accID, limit, (offset-1)*limit)
 	if err != nil {
 		log.Printf("error trying to retrieve entries page no.%v of account : %v => %v \n", (offset - 1), accID, err)
 		return nil, err
