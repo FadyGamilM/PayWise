@@ -56,3 +56,7 @@ type TransferService interface {
 	GetTransfersToSpecificAccount(ctx context.Context, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
 	GetPageTransfers(ctx context.Context, fromAccID int64, toAccID int64, limit int16, offset int16) ([]*models.Transfer, error)
 }
+
+type TransactionService interface {
+	TransferMoneyTransaction(ctx context.Context, reqDto *TxTransferMoneyReq) (*TxTransferMoneyRes, error)
+}
