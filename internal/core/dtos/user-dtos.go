@@ -1,8 +1,8 @@
 package dtos
 
 type CreateUserDto struct {
-	Username string `json:"username" binding:"required"`
-	FullName string `json:"full_name"`
+	Username string `json:"username" binding:"required, alphanum"`
+	FullName string `json:"full_name" binding:"required, alpha"`
 	Email    string `json:"email" binding:"required, email"`
 	Password string `json:"password" binding:"required, min=8, max=20"`
 }
