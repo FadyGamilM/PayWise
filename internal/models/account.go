@@ -16,7 +16,7 @@ type Account struct {
 	Currency  Currency  `json:"currency"`
 	Removed   bool      `json:"removed"`
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // func (a *Account) GetID() int64 {

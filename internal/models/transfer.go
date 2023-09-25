@@ -9,7 +9,7 @@ type Transfer struct {
 	Amount        float64   `json:"amount"`
 	Removed       bool      `json:"removed"`
 	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // func (e *Transfer) GetID() int64 {

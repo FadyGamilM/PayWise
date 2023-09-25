@@ -29,7 +29,7 @@ func (ts *transactionService) TransferMoneyTransaction(ctx context.Context, reqD
 		Amount:        reqDto.Amount,
 	})
 	if err != nil {
-		log.Printf("[SERVICE LAYER] | %v \n", err.Error())
+		log.Printf("[Transaction Service] | %v \n", err.Error())
 		return nil, err
 	}
 

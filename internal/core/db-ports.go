@@ -6,6 +6,18 @@ import (
 	"paywise/internal/models"
 )
 
+type UserRepo interface {
+	Insert(ctx context.Context, user *models.User) (*models.User, error)
+	GetByUsername(ctx context.Context, username string) (*models.User, error)
+	GetAllAccounts(ctx context.Context, username string) ([]*models.Account, error)
+}
+
+type UserService interface {
+	Create(ctx context.Context, reqDto *dtos.CreateUserDto) (*models.User, error)
+	GetUserByUsername(ctx context.Context, reqDto *dtos.GetUserByUsernameDto) (*models.User, error)
+	GetAllAccountsOfUserByUsername(ctx context.Context, reqDto *dtos.GetAllAccountsForUserDto) ([]*models.Account, error)
+}
+
 type AccountRepo interface {
 	Insert(ctx context.Context, acc *models.Account) (*models.Account, error)
 	Get(ctx context.Context) ([]*models.Account, error)
