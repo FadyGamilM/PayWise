@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"database/sql"
+	"log"
 	"paywise/internal/core"
 	"paywise/internal/database/postgres"
 	"paywise/internal/models"
@@ -47,8 +48,14 @@ func (ur *userRepo) Insert(ctx context.Context, user *models.User) (*models.User
 
 func (ur *userRepo) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	user := new(models.User)
-	err := ur.pg.DB.QueryRowContext(ctx, GET_BY_USERNAME_QUERY, username).Scan(&user.ID, &user.Username, &user.FullName, &user.Email)
+	err := ur.pg.DB.QueryRowContext(ctx, GET_BY_USERNAME_QUERY, username).Scan(&user.ID, &user.Username, &user.FullName, &user.Email, &user.HashedPassword)
 	if err != nil {
+		log.Println("i found an error =>", err)
+		if err == sql.ErrNoRows {
+			return nil, core.DB_ERROR{
+				Type: core.Resource_Not_Found,
+			}
+		}
 		return nil, core.DB_ERROR{
 			Type: core.Internal_Db_Server,
 		}
@@ -89,7 +96,7 @@ const (
 	`
 
 	GET_BY_USERNAME_QUERY = `
-		SELECT id, username, full_name, email
+		SELECT id, username, full_name, email, hashed_password
 		FROM users 
 		WHERE username = $1
 	`

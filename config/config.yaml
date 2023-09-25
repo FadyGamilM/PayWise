@@ -12,3 +12,7 @@ testpostgresdb:
   password: "paywise"
   dbname: "paywisedbtest"
   sslmode: "disable"
+
+paseto:
+  symmetrickey: "fady123456789gamil123456789mahro"
+  expiration: 15m

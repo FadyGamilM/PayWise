@@ -6,6 +6,10 @@ import (
 	"paywise/internal/models"
 )
 
+type AuthService interface {
+	Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.LoginRes, error)
+}
+
 type UserRepo interface {
 	Insert(ctx context.Context, user *models.User) (*models.User, error)
 	GetByUsername(ctx context.Context, username string) (*models.User, error)

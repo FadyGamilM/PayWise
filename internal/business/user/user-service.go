@@ -16,7 +16,7 @@ type UserServiceConfig struct {
 	UserRepository core.UserRepo
 }
 
-func (usc *UserServiceConfig) New() core.UserService {
+func New(usc *UserServiceConfig) core.UserService {
 	return &userService{
 		repo: usc.UserRepository,
 	}

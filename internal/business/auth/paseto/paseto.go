@@ -2,7 +2,8 @@ package paseto
 
 import (
 	"fmt"
-	"paywise/internal/business/auth"
+	"log"
+	tokenConfig "paywise/internal/business/auth/token"
 	"time"
 
 	"github.com/aead/chacha20poly1305"
@@ -15,7 +16,7 @@ type Paseto struct {
 	symmetricKey []byte
 }
 
-func New(key string) (auth.TokenMaker, error) {
+func New(key string) (tokenConfig.TokenMaker, error) {
 	// ensure that the length of the symmetric key is the standard of the paseto library
 	if len(key) != chacha20poly1305.KeySize {
 		return nil, fmt.Errorf("invalid symmetric key length")
@@ -28,18 +29,19 @@ func New(key string) (auth.TokenMaker, error) {
 
 func (p *Paseto) Create(username string, expiration time.Duration) (string, error) {
 	// create a payload for the token payload
-	payload, err := auth.NewTokenPayload(username, expiration)
+	payload, err := tokenConfig.NewTokenPayload(username, expiration)
 	if err != nil {
 		return "", err
 	}
+	log.Println("the payload is ===> ", payload.ID)
 	return p.paseto.Encrypt(p.symmetricKey, payload, nil)
 }
 
-func (p *Paseto) Verify(token string) (*auth.Payload, error) {
-	payload := auth.Payload{}
+func (p *Paseto) Verify(token string) (*tokenConfig.Payload, error) {
+	payload := tokenConfig.Payload{}
 	err := p.paseto.Decrypt(token, p.symmetricKey, &payload, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error trying to decrypt the token | %v \n", err.Error())
+		return nil, fmt.Errorf("error trying to decrypt the token | %v", err.Error())
 	}
 
 	// check if the payload is valid or not
