@@ -39,3 +39,10 @@ func NewTokenPayload(username string, expiration time.Duration) (*Payload, error
 	return payload, nil
 }
 
+func (p *Payload) Valid() bool {
+	if time.Now().After(p.ExpireAt) {
+		return false
+	}
+
+	return true
+}
