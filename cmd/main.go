@@ -52,7 +52,7 @@ func main() {
 	userRepo := userRepo.New(db)
 
 	// 4. setup services
-	accServiceConfig := accountService.AccountServiceConfig{AccRepo: accRepo}
+	accServiceConfig := accountService.AccountServiceConfig{AccRepo: accRepo, UserRepo: userRepo}
 	accService := accountService.New(&accServiceConfig)
 
 	configs, err := config.LoadPasetoTokenConfig("./config")
@@ -72,7 +72,7 @@ func main() {
 	transferServiceConfig := transferService.TransferServiceConfig{TransferRepo: transferRepo}
 	_ = transferService.New(&transferServiceConfig)
 
-	moneyTransactionServiceConfig := moneyTransactionService.TransactionServiceConfig{TxStore: txStore}
+	moneyTransactionServiceConfig := moneyTransactionService.TransactionServiceConfig{TxStore: txStore, AccRepo: accRepo}
 	moneyTransactionService := moneyTransactionService.New(&moneyTransactionServiceConfig)
 
 	userServiceConfig := userService.UserServiceConfig{UserRepository: userRepo}
@@ -85,7 +85,7 @@ func main() {
 	accountHandler.New(&accountHandler.AccountHandlerConfig{R: router, Service: accService, TokenProvider: pasetoTokenAuth})
 	authHandler.New(&authHandler.AuthHandlerConfig{R: router, AuthService: authService})
 	userHandler.New(&userHandler.UserHandlerConfig{R: router, UserService: userService, TokenProvider: pasetoTokenAuth})
-	moneyTxHandler.New(&moneyTxHandler.MoneyTxHandlerConfig{R: router, Service: moneyTransactionService, TokenProvider: pasetoTokenAuth})
+	moneyTxHandler.New(&moneyTxHandler.MoneyTxHandlerConfig{R: router, Service: moneyTransactionService, UserService: userService, TokenProvider: pasetoTokenAuth})
 
 	// create a server instance
 	server := rest.CreateServer(router)

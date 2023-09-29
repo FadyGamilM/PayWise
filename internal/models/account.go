@@ -14,6 +14,7 @@ type Account struct {
 	OwnerName string    `json:"owner_name"`
 	Balance   float64   `json:"balance"`
 	Currency  Currency  `json:"currency"`
+	OwnerID   int64     `json:"owner_id"`
 	Removed   bool      `json:"removed"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

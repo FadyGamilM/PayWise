@@ -10,9 +10,9 @@ import (
 
 const (
 	INSERT_QUERY string = `
-		INSERT INTO accounts (owner_name, balance, currency) 
-		VALUES ($1, $2, $3)
-		RETURNING id, owner_name, balance, currency
+		INSERT INTO accounts (owner_name, balance, currency, owner_id) 
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, owner_name, balance, currency, owner_id
 	`
 
 	GET_QUERY string = `
@@ -81,7 +81,7 @@ func New(pg postgres.DBTX) core.AccountRepo {
 func (ar *accountRepo) Insert(ctx context.Context, acc *models.Account) (*models.Account, error) {
 	// the repo logic
 	createdAcc := new(models.Account)
-	if err := ar.pg.DB.QueryRowContext(ctx, INSERT_QUERY, acc.OwnerName, acc.Balance, acc.Currency).Scan(&createdAcc.ID, &createdAcc.OwnerName, &createdAcc.Balance, &createdAcc.Currency); err != nil {
+	if err := ar.pg.DB.QueryRowContext(ctx, INSERT_QUERY, acc.OwnerName, acc.Balance, acc.Currency, acc.OwnerID).Scan(&createdAcc.ID, &createdAcc.OwnerName, &createdAcc.Balance, &createdAcc.Currency, &createdAcc.OwnerID); err != nil {
 		log.Printf("error trying to isnert an account => %v \n", err)
 		return nil, err
 	}

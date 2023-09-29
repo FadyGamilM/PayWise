@@ -1,9 +1,11 @@
 package account
 
 import (
+	"log"
 	"net/http"
 	"paywise/internal/business/auth/token"
 	"paywise/internal/core"
+	"paywise/internal/core/dtos"
 	"paywise/internal/transport/rest/middlewares"
 
 	"github.com/gin-gonic/gin"
@@ -24,8 +26,25 @@ func New(ahc *AccountHandlerConfig) *AccountHandler {
 	h := &AccountHandler{
 		service: ahc.Service,
 	}
-	accountRoutes.GET("/", h.HandleGetAll)
+	accountRoutes.GET("", h.HandleGetAll)
+	accountRoutes.POST("", h.HandleCreateAccount)
 	return h
+}
+
+func (ah *AccountHandler) HandleCreateAccount(c *gin.Context) {
+	reqDto := new(dtos.CreateAccReq)
+	payload := c.MustGet(middlewares.AUTHORIZATION_PAYLOAD_CTX_KEY).(*token.Payload)
+	acc, err := ah.service.Create(c, reqDto, payload.Username)
+	if err != nil {
+		log.Printf("err ==> ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "couldn't create an account for a user with username : " + payload.Username,
+		})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{
+		"data": acc,
+	})
 }
 
 func (ah *AccountHandler) HandleGetAll(c *gin.Context) {

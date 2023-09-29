@@ -47,6 +47,7 @@ func (ur *userRepo) Insert(ctx context.Context, user *models.User) (*models.User
 }
 
 func (ur *userRepo) GetByUsername(ctx context.Context, username string) (*models.User, error) {
+	log.Printf("the username is => %v \n", username)
 	user := new(models.User)
 	err := ur.pg.DB.QueryRowContext(ctx, GET_BY_USERNAME_QUERY, username).Scan(&user.ID, &user.Username, &user.FullName, &user.Email, &user.HashedPassword)
 	if err != nil {

@@ -41,8 +41,11 @@ func NewTokenPayload(username string, expiration time.Duration) (*Payload, error
 
 func (p *Payload) Valid() bool {
 	if time.Now().After(p.ExpireAt) {
+
+		log.Println("the expiration date is not valid")
 		return false
 	}
+	log.Println("the expiration date is  valid")
 
 	return true
 }

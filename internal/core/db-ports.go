@@ -34,7 +34,7 @@ type AccountRepo interface {
 }
 
 type AccountService interface {
-	Create(ctx context.Context, reqDto *dtos.CreateAccReq) (*models.Account, error)
+	Create(ctx context.Context, reqDto *dtos.CreateAccReq, ownerName string) (*models.Account, error)
 	GetAll(ctx context.Context) ([]*models.Account, error)
 	GetByID(ctx context.Context, reqDto *dtos.GetAccByIdReq) (*models.Account, error)
 	GetPage(ctx context.Context, reqDto *dtos.PaginateAccountsReq) ([]*models.Account, error)

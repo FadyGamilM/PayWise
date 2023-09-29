@@ -44,9 +44,15 @@ func (p *Paseto) Verify(token string) (*tokenConfig.Payload, error) {
 		return nil, fmt.Errorf("error trying to decrypt the token | %v", err.Error())
 	}
 
+	log.Println("passing the token decryption")
+
 	// check if the payload is valid or not
 	isValid := payload.Valid()
-	if isValid {
+
+	log.Println("pass the token validation")
+	log.Println("the token paylaod is ==> ", payload)
+
+	if !isValid {
 		return nil, fmt.Errorf("token is expired")
 	}
 	return &payload, nil

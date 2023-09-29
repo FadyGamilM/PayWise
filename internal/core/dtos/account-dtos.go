@@ -9,8 +9,8 @@ type GetAccByIdReq struct {
 }
 
 type CreateAccReq struct {
-	OwnerName string `json:"owner_name" binding:"required"`
-	Currency  string `json:"currency" binding:"required,oneof=EUR USD"`
+	// OwnerName string `json:"owner_name" binding:"required"`
+	Currency string `json:"currency" binding:"required,oneof=EUR USD"`
 }
 
 type PaginateAccountsReq struct {

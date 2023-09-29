@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"log"
 	"paywise/internal/business/auth/token"
 	"paywise/internal/core"
 	"strings"
@@ -9,7 +10,7 @@ import (
 )
 
 const (
-	AUTHORIZATION_HEADER = "authorization"
+	AUTHORIZATION_HEADER = "Authorization"
 	AUTHORIZATION_TYPE   = "Bearer"
 	// to set the payload in the context of the request before passing it to the next handler
 	AUTHORIZATION_PAYLOAD_CTX_KEY = "authorization_payload"
@@ -24,6 +25,7 @@ func Authenticate(tokenProvider token.TokenMaker) gin.HandlerFunc {
 				"error": appErr,
 			})
 		}
+		log.Println("pass the empty authorization header check")
 
 		// if the authorization header is not empty but the token is not in a valid format, abort the request
 		authorizationHeader := strings.Fields(ctx.GetHeader(AUTHORIZATION_HEADER))
@@ -34,6 +36,8 @@ func Authenticate(tokenProvider token.TokenMaker) gin.HandlerFunc {
 			})
 		}
 
+		log.Println("pass the invalid authorization header format check")
+
 		authorizationTokenType := authorizationHeader[0]
 		if authorizationTokenType != AUTHORIZATION_TYPE {
 			appErr := core.NewUnAuthorizedError("authorization token type is not supported by the server we only support Bearer tokens, not authorized to perform this request")
@@ -42,7 +46,11 @@ func Authenticate(tokenProvider token.TokenMaker) gin.HandlerFunc {
 			})
 		}
 
+		log.Println("pass the supported types of authorization headers check")
+
 		// if its in a valid format, verify it using the verify method of the token provider to decrypt the token and return its payload (if the expiration date is still valid)
+		log.Println("the token value is => ", authorizationHeader[1])
+
 		tokenPayload, err := tokenProvider.Verify(authorizationHeader[1])
 		if err != nil {
 			appErr := core.NewUnAuthorizedError("couldn't verify the token, not authorized to perform this request")
@@ -50,6 +58,8 @@ func Authenticate(tokenProvider token.TokenMaker) gin.HandlerFunc {
 				"error": appErr,
 			})
 		}
+
+		log.Println("The Token Payload Is => ", tokenPayload)
 
 		// set the payload into the context
 		ctx.Set(AUTHORIZATION_PAYLOAD_CTX_KEY, tokenPayload)

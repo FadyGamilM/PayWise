@@ -10,25 +10,38 @@ import (
 
 type accountService struct {
 	// depends on the interface not on the concrete imp
-	accRepo core.AccountRepo
+	accRepo  core.AccountRepo
+	userRepo core.UserRepo
 }
 
 type AccountServiceConfig struct {
-	AccRepo core.AccountRepo
+	AccRepo  core.AccountRepo
+	UserRepo core.UserRepo
 }
 
 func New(asc *AccountServiceConfig) core.AccountService {
 	return &accountService{
-		accRepo: asc.AccRepo,
+		accRepo:  asc.AccRepo,
+		userRepo: asc.UserRepo,
 	}
 }
 
-func (as *accountService) Create(ctx context.Context, reqDto *dtos.CreateAccReq) (*models.Account, error) {
+func (as *accountService) Create(ctx context.Context, reqDto *dtos.CreateAccReq, ownerName string) (*models.Account, error) {
+
+	// fetch the user from the database given the current logged-in username
+	user, err := as.userRepo.GetByUsername(ctx, ownerName)
+	if err != nil {
+		log.Printf("ACCOUNT SERVICE | CREATE | error trying to get the user from the databse | %v \n", err.Error())
+		return nil, err
+	}
+
+	log.Println("the user is ready to create an account for him/her => ", user.ID, "  ", user.Username)
 	// convert request dto into a domain entity to pass it to the repo layer
 	acc := new(models.Account)
-	acc.OwnerName = reqDto.OwnerName
+	acc.OwnerName = ownerName
 	acc.Currency = models.Currency(reqDto.Currency)
 	acc.Balance = float64(0)
+	acc.OwnerID = user.ID
 	acc.Removed = false
 
 	// call the repo layer

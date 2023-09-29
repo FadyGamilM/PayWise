@@ -31,13 +31,12 @@ func New(uhc *UserHandlerConfig) *UserHandler {
 }
 
 func (uh *UserHandler) HandleGetAllUserAccounts(c *gin.Context) {
+	// => the username must be extracted from the authorization token not from the request body anymore ..
 	var reqDto dtos.GetAllAccountsForUserDto
-	if err := c.ShouldBind(&reqDto); err != nil {
-		appErr := core.NewBadRequestError()
-		c.JSON(appErr.StatusCode(), gin.H{
-			"error": appErr,
-		})
-	}
+	// get the payload from the request context set by the middleware
+	payload := c.MustGet(middlewares.AUTHORIZATION_PAYLOAD_CTX_KEY).(*token.Payload)
+	// set the reqDto fields
+	reqDto.Username = payload.Username
 	// TODO => make a more robust error handler for each layer to specify the error more accurate
 	accounts, err := uh.service.GetAllAccountsOfUserByUsername(c, &reqDto)
 	if err != nil {
