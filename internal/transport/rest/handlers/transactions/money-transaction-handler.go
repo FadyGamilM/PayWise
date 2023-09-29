@@ -3,8 +3,10 @@ package transactions
 import (
 	"log"
 	"net/http"
+	"paywise/internal/business/auth/token"
 	"paywise/internal/core"
 	"paywise/internal/core/dtos"
+	"paywise/internal/transport/rest/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,8 +16,9 @@ type MoneyTxHandler struct {
 }
 
 type MoneyTxHandlerConfig struct {
-	R       *gin.Engine
-	Service core.TransactionService
+	R             *gin.Engine
+	Service       core.TransactionService
+	TokenProvider token.TokenMaker
 }
 
 func New(mthc *MoneyTxHandlerConfig) *MoneyTxHandler {
@@ -23,7 +26,7 @@ func New(mthc *MoneyTxHandlerConfig) *MoneyTxHandler {
 		service: mthc.Service,
 	}
 
-	moneyTxRoutes := mthc.R.Group("/api/money_transaction")
+	moneyTxRoutes := mthc.R.Group("/api/money_transaction").Use(middlewares.Authenticate(mthc.TokenProvider))
 
 	moneyTxRoutes.POST("", h.HandleTransferMoney)
 

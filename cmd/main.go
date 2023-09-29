@@ -82,11 +82,10 @@ func main() {
 	router := rest.CreateRouter()
 
 	// inistantiate a handler to be up and waiting for mapping its methods to the routes when a request comes to one of them
-	accountHandler.New(&accountHandler.AccountHandlerConfig{R: router, Service: accService})
+	accountHandler.New(&accountHandler.AccountHandlerConfig{R: router, Service: accService, TokenProvider: pasetoTokenAuth})
 	authHandler.New(&authHandler.AuthHandlerConfig{R: router, AuthService: authService})
-	userHandler.New(&userHandler.UserHandlerConfig{R: router, UserService: userService})
-
-	moneyTxHandler.New(&moneyTxHandler.MoneyTxHandlerConfig{R: router, Service: moneyTransactionService})
+	userHandler.New(&userHandler.UserHandlerConfig{R: router, UserService: userService, TokenProvider: pasetoTokenAuth})
+	moneyTxHandler.New(&moneyTxHandler.MoneyTxHandlerConfig{R: router, Service: moneyTransactionService, TokenProvider: pasetoTokenAuth})
 
 	// create a server instance
 	server := rest.CreateServer(router)

@@ -7,6 +7,7 @@ import (
 )
 
 type AuthService interface {
+	Signup(ctx context.Context, reqDto *dtos.CreateUserDto) (*dtos.LoginRes, error)
 	Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.LoginRes, error)
 }
 
@@ -17,7 +18,6 @@ type UserRepo interface {
 }
 
 type UserService interface {
-	Create(ctx context.Context, reqDto *dtos.CreateUserDto) (*models.User, error)
 	GetUserByUsername(ctx context.Context, reqDto *dtos.GetUserByUsernameDto) (*models.User, error)
 	GetAllAccountsOfUserByUsername(ctx context.Context, reqDto *dtos.GetAllAccountsForUserDto) ([]*models.Account, error)
 }

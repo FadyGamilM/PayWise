@@ -22,25 +22,6 @@ func New(usc *UserServiceConfig) core.UserService {
 	}
 }
 
-func (us *userService) Create(ctx context.Context, reqDto *dtos.CreateUserDto) (*models.User, error) {
-	// hash the password
-	hashedPass, err := HashPassword(reqDto.Password)
-	if err != nil {
-		log.Printf("[User Service] | %v \n", err)
-		return nil, err
-	}
-	createdUser, err := us.repo.Insert(ctx, &models.User{
-		Username:       reqDto.Username,
-		Email:          reqDto.Email,
-		FullName:       reqDto.FullName,
-		HashedPassword: hashedPass,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return createdUser, nil
-}
-
 func (us *userService) GetUserByUsername(ctx context.Context, reqDto *dtos.GetUserByUsernameDto) (*models.User, error) {
 	user, err := us.repo.GetByUsername(ctx, reqDto.Username)
 	if err != nil {

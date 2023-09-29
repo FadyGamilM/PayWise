@@ -6,9 +6,9 @@ import (
 	"log"
 	"paywise/config"
 	tokenConfig "paywise/internal/business/auth/token"
-	userService "paywise/internal/business/user"
 	"paywise/internal/core"
 	"paywise/internal/core/dtos"
+	"paywise/internal/models"
 )
 
 type authService struct {
@@ -39,7 +39,7 @@ func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.
 
 	// check if the given password is the same as the stored hashed password
 
-	IsCorrect := userService.CheckPassword(reqDto.Password, registeredUser.HashedPassword)
+	IsCorrect := CheckPassword(reqDto.Password, registeredUser.HashedPassword)
 	if !IsCorrect {
 		return nil, fmt.Errorf("invalid user credentials")
 	}
@@ -69,5 +69,47 @@ func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.
 		},
 	}
 
+	return response, nil
+}
+
+func (as *authService) Signup(ctx context.Context, reqDto *dtos.CreateUserDto) (*dtos.LoginRes, error) {
+	// hash the password
+	hashedPass, err := HashPassword(reqDto.Password)
+	if err != nil {
+		log.Printf("[Auth Service] | %v \n", err)
+		return nil, err
+	}
+	createdUser, err := as.userRepo.Insert(ctx, &models.User{
+		Username:       reqDto.Username,
+		Email:          reqDto.Email,
+		FullName:       reqDto.FullName,
+		HashedPassword: hashedPass,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// load the secret key from the config.yaml
+	configs, err := config.LoadPasetoTokenConfig("./config")
+	if err != nil {
+		fmt.Println("error trying to load config variables", err)
+		return nil, err
+	}
+
+	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Expiration)
+	if err != nil {
+		return nil, err
+	}
+
+	// construct the response and return it
+	response := &dtos.LoginRes{
+		AccessToken: Token,
+		User: &dtos.UserResDto{
+			ID:       createdUser.ID,
+			Username: createdUser.Username,
+			FullName: createdUser.FullName,
+			Email:    createdUser.Email,
+		},
+	}
 	return response, nil
 }
