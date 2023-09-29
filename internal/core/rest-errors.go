@@ -62,10 +62,14 @@ func NewBadRequestError() ERROR {
 	}
 }
 
-func NewUnAuthorizedError() ERROR {
+func NewUnAuthorizedError(cause string) ERROR {
+	errMsg := ""
+	if len(cause) == 0 {
+		errMsg = "not authorized to access this resource or perform this action"
+	}
 	return ERROR{
 		Type: UNAUTHORIZED_ERR,
-		Msg:  "not authorized to access this resource or perform this action",
+		Msg:  errMsg,
 	}
 }
 

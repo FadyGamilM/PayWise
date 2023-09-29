@@ -32,26 +32,26 @@ import (
 )
 
 func main() {
+	// 1. connect to postgres
 	db, err := postgres.Setup()
 	if err != nil {
 		log.Printf("error trying to connect to database : %v \n", err)
 	}
-
 	db.Ping()
-
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-
 	defer cancel()
 
-	// setup transactions store and database repositories
+	// 2. setup transactions store and database repositories
 	txStore := new(transactions.TxStore)
 	txStore.DB = db
 
+	// 3. setup repositories
 	accRepo := accountRepo.New(db)
 	entryRepo := entryRepo.New(db)
 	transferRepo := transferRepo.New(db)
 	userRepo := userRepo.New(db)
 
+	// 4. setup services
 	accServiceConfig := accountService.AccountServiceConfig{AccRepo: accRepo}
 	accService := accountService.New(&accServiceConfig)
 

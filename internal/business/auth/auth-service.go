@@ -28,6 +28,7 @@ func New(asc *AuthServiceConfig) core.AuthService {
 	}
 }
 
+// TODO => this method must run within the same transaction ..
 func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.LoginRes, error) {
 	// check if there is a registered user in our system with this username
 	registeredUser, err := as.userRepo.GetByUsername(ctx, reqDto.Username)
@@ -35,8 +36,6 @@ func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.
 		// TODO => customize the error later
 		return nil, err
 	}
-
-	log.Println("the registeredUser is ===> ", registeredUser.FullName)
 
 	// check if the given password is the same as the stored hashed password
 
@@ -54,15 +53,8 @@ func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.
 		return nil, err
 	}
 
-	log.Println("the username is | ", reqDto.Username)
-	log.Println("the expiration is | ", configs.Paseto.Expiration)
-	// if its a valid credential
-	if as.tokenAuth == nil {
-		log.Println("holy mother fucker")
-	}
 	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Expiration)
 	if err != nil {
-		log.Println("error is ===========> ", err)
 		return nil, err
 	}
 
