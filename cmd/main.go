@@ -37,7 +37,11 @@ func main() {
 	if err != nil {
 		log.Printf("error trying to connect to database : %v \n", err)
 	}
-	db.Ping()
+	if err := db.Ping(); err != nil {
+		log.Fatalf("error trying to ping to the databse .. : %v", err)
+	}
+
+	log.Printf("Ponged successfully ..")
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 

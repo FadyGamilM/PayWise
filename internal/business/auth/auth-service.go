@@ -53,8 +53,8 @@ func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.
 		return nil, err
 	}
 
-	log.Println("the expiration date is => ", configs.Paseto.Expiration)
-	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Expiration)
+	log.Println("the expiration date is => ", configs.Paseto.Access_token_expiration)
+	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Access_token_expiration)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (as *authService) Signup(ctx context.Context, reqDto *dtos.CreateUserDto) (
 		return nil, err
 	}
 
-	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Expiration)
+	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Access_token_expiration)
 	if err != nil {
 		return nil, err
 	}

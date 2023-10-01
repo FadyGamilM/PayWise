@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"paywise/config"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,13 @@ func CreateRouter() *gin.Engine {
 }
 
 func CreateServer(r *gin.Engine) *http.Server {
+	configs, err := config.LoadServerConfigs("./config")
+	if err != nil {
+		log.Println("couldn't read the configs")
+		os.Exit(1)
+	}
 	return &http.Server{
-		Addr:    "localhost:8000",
+		Addr:    configs.Server.Port,
 		Handler: r,
 	}
 }

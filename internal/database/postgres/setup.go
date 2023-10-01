@@ -14,7 +14,8 @@ import (
 )
 
 func Setup() (*sql.DB, error) {
-	configs, err := config.LoadPostgresConfig("./config")
+	// configs, err := config.LoadPostgresConfig("./config")
+	configs, err := config.LoadPostgresConfig_v2()
 	if err != nil {
 		fmt.Println("error trying to load config variables", err)
 		return nil, err
@@ -32,6 +33,7 @@ func Setup() (*sql.DB, error) {
 
 	dsn.RawQuery = q.Encode()
 
+	log.Println(dsn.String())
 	db, err := sql.Open("pgx", dsn.String())
 	if err != nil {
 		fmt.Println("error trying to open a postgres connection", err)

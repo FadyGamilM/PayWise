@@ -1,7 +1,6 @@
 postgresdb:
-  host: "localhost:5432"
+  host: localhost:5432
   user: "paywise"
-  fady: "fady"
   password: "paywise"
   dbname: "paywisedb"
   sslmode: "disable"
@@ -15,4 +14,9 @@ testpostgresdb:
 
 paseto:
   symmetrickey: "fady123456789gamil123456789mahro"
-  expiration: 15m
+  access_token_expiration: 15m
+  refresh_token_expiration: 24h
+
+
+server:
+  port: "0.0.0.0:8000"
