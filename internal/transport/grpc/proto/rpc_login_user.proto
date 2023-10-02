@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+
+import "user.proto";
+
+option go_package = "paywise/pb";
+
+message LoginRequest = {
+    string username  = 1;
+    string password  =  2;
+}
+
+message LoginResponse = {
+    AuthResponse response = 1;
+}

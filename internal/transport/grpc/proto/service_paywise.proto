@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package pb;
+
+import "rpc_login_user.proto";
+import "rpc_signup_user.proto";
+
+
+option go_package = "paywise/pb";
+
+service Paywise {
+    rpc SignupUser (SignupRequest) returns (SignupResponse);
+    rpc LoginUser (LoginRequest) returns (LoginResponse);
+}

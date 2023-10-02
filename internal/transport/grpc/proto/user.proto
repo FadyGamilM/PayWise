@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "paywise/pb";
+
+message User {
+    int64 id = 1;
+    string username = 2;
+    string full_name = 3;
+    string email = 4;
+    string hashed_password = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7; 
+}
+
+message AuthResponse {
+    google.protobuf.StringValue    session_id = 1;
+	string access_token  = 2;
+	google.protobuf.Timestamp access_token_expires_at = 3;
+	string refresh_token  = 4;
+	google.protobuf.Timestamp refresh_token_expires_at = 5;
+	UserResponse user = 6;
+}
