@@ -9,22 +9,27 @@ import (
 	"paywise/internal/core"
 	"paywise/internal/core/dtos"
 	"paywise/internal/models"
+
+	"github.com/google/uuid"
 )
 
 type authService struct {
-	userRepo  core.UserRepo
-	tokenAuth tokenConfig.TokenMaker
+	userRepo    core.UserRepo
+	sessionRepo core.SessionRepo
+	tokenAuth   tokenConfig.TokenMaker
 }
 
 type AuthServiceConfig struct {
-	UserRepo  core.UserRepo
-	TokenAuth tokenConfig.TokenMaker
+	UserRepo    core.UserRepo
+	SessionRepo core.SessionRepo
+	TokenAuth   tokenConfig.TokenMaker
 }
 
 func New(asc *AuthServiceConfig) core.AuthService {
 	return &authService{
-		userRepo:  asc.UserRepo,
-		tokenAuth: asc.TokenAuth,
+		userRepo:    asc.UserRepo,
+		sessionRepo: asc.SessionRepo,
+		tokenAuth:   asc.TokenAuth,
 	}
 }
 
@@ -53,14 +58,37 @@ func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.
 		return nil, err
 	}
 
-	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Access_token_expiration)
+	Token, accessTokenPayload, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Access_token_expiration)
 	if err != nil {
 		return nil, err
 	}
 
+	refreshToken, refreshTokenPayload, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Refresh_token_expiration)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionID, err := uuid.NewUUID()
+	if err != nil {
+		log.Printf("error trying to create a new session id : %v \n", err)
+		return nil, err
+	}
+
+	as.sessionRepo.CreateSession(ctx, &models.Session{
+		ID:           sessionID,
+		Username:     reqDto.Username,
+		RefreshToken: refreshToken,
+		IsBlocked:    false,
+		ExpireAt:     refreshTokenPayload.ExpireAt,
+	})
+
 	// construct the response and return it
 	response := &dtos.LoginRes{
-		AccessToken: Token,
+		SessionID:              sessionID,
+		AccessToken:            Token,
+		AccessTokenExpiration:  accessTokenPayload.ExpireAt,
+		RefreshToken:           refreshToken,
+		RefreshTokenExpiration: refreshTokenPayload.ExpireAt,
 		User: &dtos.UserResDto{
 			ID:       registeredUser.ID,
 			Username: registeredUser.Username,
@@ -96,14 +124,37 @@ func (as *authService) Signup(ctx context.Context, reqDto *dtos.CreateUserDto) (
 		return nil, err
 	}
 
-	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Access_token_expiration)
+	Token, accessTokenPayload, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Access_token_expiration)
 	if err != nil {
 		return nil, err
 	}
 
+	refreshToken, refreshTokenPayload, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Refresh_token_expiration)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionID, err := uuid.NewUUID()
+	if err != nil {
+		log.Printf("error trying to create a new session id : %v \n", err)
+		return nil, err
+	}
+
+	as.sessionRepo.CreateSession(ctx, &models.Session{
+		ID:           sessionID,
+		Username:     reqDto.Username,
+		RefreshToken: refreshToken,
+		IsBlocked:    false,
+		ExpireAt:     refreshTokenPayload.ExpireAt,
+	})
+
 	// construct the response and return it
 	response := &dtos.LoginRes{
-		AccessToken: Token,
+		SessionID:              sessionID,
+		AccessToken:            Token,
+		AccessTokenExpiration:  accessTokenPayload.ExpireAt,
+		RefreshToken:           refreshToken,
+		RefreshTokenExpiration: refreshTokenPayload.ExpireAt,
 		User: &dtos.UserResDto{
 			ID:       createdUser.ID,
 			Username: createdUser.Username,

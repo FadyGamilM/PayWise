@@ -2,6 +2,7 @@ package paseto
 
 import (
 	"fmt"
+	"paywise/internal/business/auth/token"
 	tokenConfig "paywise/internal/business/auth/token"
 	"time"
 
@@ -26,13 +27,18 @@ func New(key string) (tokenConfig.TokenMaker, error) {
 	}, nil
 }
 
-func (p *Paseto) Create(username string, expiration time.Duration) (string, error) {
+func (p *Paseto) Create(username string, expiration time.Duration) (string, *token.Payload, error) {
 	// create a payload for the token payload
 	payload, err := tokenConfig.NewTokenPayload(username, expiration)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return p.paseto.Encrypt(p.symmetricKey, payload, nil)
+	token, err := p.paseto.Encrypt(p.symmetricKey, payload, nil)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return token, payload, nil
 }
 
 func (p *Paseto) Verify(token string) (*tokenConfig.Payload, error) {

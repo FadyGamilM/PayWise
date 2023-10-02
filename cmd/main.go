@@ -17,6 +17,7 @@ import (
 	"paywise/internal/database/postgres"
 	accountRepo "paywise/internal/repository/account"
 	entryRepo "paywise/internal/repository/entry"
+	sessionRepo "paywise/internal/repository/session"
 	"paywise/internal/repository/transactions"
 	transferRepo "paywise/internal/repository/transfer"
 	userRepo "paywise/internal/repository/user"
@@ -54,6 +55,7 @@ func main() {
 	entryRepo := entryRepo.New(db)
 	transferRepo := transferRepo.New(db)
 	userRepo := userRepo.New(db)
+	sessionRepo := sessionRepo.New(db)
 
 	// 4. setup services
 	accServiceConfig := accountService.AccountServiceConfig{AccRepo: accRepo, UserRepo: userRepo}
@@ -67,7 +69,7 @@ func main() {
 	if err != nil {
 		log.Printf("error trying to create paseto token auth imp | %v \n", err)
 	}
-	authServiceConfig := authService.AuthServiceConfig{UserRepo: userRepo, TokenAuth: pasetoTokenAuth}
+	authServiceConfig := authService.AuthServiceConfig{UserRepo: userRepo, SessionRepo: sessionRepo, TokenAuth: pasetoTokenAuth}
 	authService := authService.New(&authServiceConfig)
 
 	entryServiceConfig := entrytService.EntryServiceConfig{EntryRepo: entryRepo}

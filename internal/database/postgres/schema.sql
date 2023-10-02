@@ -23,11 +23,8 @@ CREATE TABLE accounts (
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS sessions(
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  	user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
 	username VARCHAR NOT NULL REFERENCES users(username) ON DELETE CASCADE,
 	refresh_token VARCHAR NOT NULL,
-	client_ip VARCHAR   	NOT NULL,
-	user_agent VARCHAR 	NOT NULL,
 	is_blocked BOOLEAN NOT NULL DEFAULT FALSE,
 	expire_at TIMESTAMPTZ NOT NULL
 );

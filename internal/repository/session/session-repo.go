@@ -22,12 +22,12 @@ func New(pg postgres.DBTX) core.SessionRepo {
 
 const (
 	CREATE_SESSION_QUERY = `
-		INSERT INTO sessions (id, user_id, username, refresh_token, client_ip, user_agent, is_blocked, expire_at) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, user_id, username, refresh_token, client_ip, user_agent, is_blocked, expire_at 
+		INSERT INTO sessions (id, username, refresh_token, is_blocked, expire_at) 
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, username, refresh_token, is_blocked, expire_at 
 	`
 	GET_SESSION_BY_ID_QUERY = `
-		SELECT user_id, username, refresh_token, client_ip, user_agent, is_blocked, expire_at 
+		SELECT username, refresh_token, is_blocked, expire_at 
 		FROM sessions 
 		WHERE id = $1
 	`
@@ -35,13 +35,10 @@ const (
 
 func (sr *sessionRepo) CreateSession(ctx context.Context, session *models.Session) (*models.Session, error) {
 	createdSession := new(models.Session)
-	err := sr.pg.DB.QueryRowContext(ctx, CREATE_SESSION_QUERY, session.ID, session.UserID, session.Username, session.RefreshToken, session.ClientIP, session.UserAgent, session.IsBlocked, session.ExpireAt).Scan(
+	err := sr.pg.DB.QueryRowContext(ctx, CREATE_SESSION_QUERY, session.ID, session.Username, session.RefreshToken, session.IsBlocked, session.ExpireAt).Scan(
 		&createdSession.ID,
-		&createdSession.UserID,
 		&createdSession.Username,
 		&createdSession.RefreshToken,
-		&createdSession.ClientIP,
-		&createdSession.UserAgent,
 		&createdSession.IsBlocked,
 		&createdSession.ExpireAt,
 	)
@@ -57,11 +54,8 @@ func (sr *sessionRepo) GetBySessionID(ctx context.Context, sessionID int64) (*mo
 	session := new(models.Session)
 	err := sr.pg.DB.QueryRowContext(ctx, GET_SESSION_BY_ID_QUERY, sessionID).Scan(
 		&session.ID,
-		&session.UserID,
 		&session.Username,
 		&session.RefreshToken,
-		&session.ClientIP,
-		&session.UserAgent,
 		&session.IsBlocked,
 		&session.ExpireAt,
 	)
