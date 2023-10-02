@@ -2,7 +2,6 @@ package paseto
 
 import (
 	"fmt"
-	"log"
 	tokenConfig "paywise/internal/business/auth/token"
 	"time"
 
@@ -33,7 +32,6 @@ func (p *Paseto) Create(username string, expiration time.Duration) (string, erro
 	if err != nil {
 		return "", err
 	}
-	log.Println("the payload is ===> ", payload.ID)
 	return p.paseto.Encrypt(p.symmetricKey, payload, nil)
 }
 
@@ -44,13 +42,8 @@ func (p *Paseto) Verify(token string) (*tokenConfig.Payload, error) {
 		return nil, fmt.Errorf("error trying to decrypt the token | %v", err.Error())
 	}
 
-	log.Println("passing the token decryption")
-
 	// check if the payload is valid or not
 	isValid := payload.Valid()
-
-	log.Println("pass the token validation")
-	log.Println("the token paylaod is ==> ", payload)
 
 	if !isValid {
 		return nil, fmt.Errorf("token is expired")

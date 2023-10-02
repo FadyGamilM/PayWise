@@ -53,7 +53,6 @@ func (as *authService) Login(ctx context.Context, reqDto *dtos.LoginReq) (*dtos.
 		return nil, err
 	}
 
-	log.Println("the expiration date is => ", configs.Paseto.Access_token_expiration)
 	Token, err := as.tokenAuth.Create(reqDto.Username, configs.Paseto.Access_token_expiration)
 	if err != nil {
 		return nil, err

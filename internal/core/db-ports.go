@@ -77,3 +77,13 @@ type TransferService interface {
 type TransactionService interface {
 	TransferMoneyTransaction(ctx context.Context, reqDto *dtos.TxTransferMoneyReq) (*dtos.TxTransferMoneyRes, error)
 }
+
+type SessionRepo interface {
+	CreateSession(ctx context.Context, session *models.Session) (*models.Session, error)
+	GetBySessionID(ctx context.Context, sessionID int64) (*models.Session, error)
+}
+
+type SessionService interface {
+	CreateSession(ctx context.Context, session *models.Session) (*models.Session, error)
+	GetBySessionID(ctx context.Context, sessionID int64) (*models.Session, error)
+}
