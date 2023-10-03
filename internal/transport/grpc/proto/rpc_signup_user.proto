@@ -3,7 +3,7 @@ syntax = "proto3";
 package pb;
 
 import "user.proto";
-import "github.com/google/uuid/uuidpb/uuid.proto";
+
 
 option go_package = "paywise/pb";
 
@@ -14,12 +14,6 @@ message SignupRequest {
     string password  =  4;
 }
 
-message UserResponse {
-    int64 id = 1;
-    string username = 2;
-    string full_name = 3;
-    string email = 4;
-}
 
 
 message SignupResponse {

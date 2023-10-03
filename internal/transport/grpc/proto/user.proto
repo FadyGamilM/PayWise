@@ -3,7 +3,6 @@ syntax = "proto3";
 package pb;
 
 import "google/protobuf/timestamp.proto";
-
 option go_package = "paywise/pb";
 
 message User {
@@ -16,8 +15,16 @@ message User {
     google.protobuf.Timestamp updated_at = 7; 
 }
 
+message UserResponse {
+    int64 id = 1;
+    string username = 2;
+    string full_name = 3;
+    string email = 4;
+}
+
+
 message AuthResponse {
-    google.protobuf.StringValue    session_id = 1;
+    string    session_id = 1;
 	string access_token  = 2;
 	google.protobuf.Timestamp access_token_expires_at = 3;
 	string refresh_token  = 4;
