@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"os"
-	"os/signal"
 	"paywise/config"
 	accountService "paywise/internal/business/account"
 	authService "paywise/internal/business/auth"
@@ -21,54 +21,59 @@ import (
 	"paywise/internal/repository/transactions"
 	transferRepo "paywise/internal/repository/transfer"
 	userRepo "paywise/internal/repository/user"
+	"paywise/internal/transport/grpc"
+	"paywise/internal/transport/grpc/pb"
 	"paywise/internal/transport/rest"
 	accountHandler "paywise/internal/transport/rest/handlers/account"
 	authHandler "paywise/internal/transport/rest/handlers/auth"
 	moneyTxHandler "paywise/internal/transport/rest/handlers/transactions"
 	userHandler "paywise/internal/transport/rest/handlers/user"
-	"syscall"
 	"time"
 
 	_ "github.com/lib/pq"
+	gRPC "google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	// 1. connect to postgres
+	//! 1. connect to postgres
 	db, err := postgres.Setup()
 	if err != nil {
 		log.Printf("error trying to connect to database : %v \n", err)
+		os.Exit(1)
 	}
 	if err := db.Ping(); err != nil {
 		log.Fatalf("error trying to ping to the databse .. : %v", err)
+		os.Exit(1)
 	}
 
 	log.Printf("Ponged successfully ..")
 	_, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	// 2. setup transactions store and database repositories
+	//! 2. setup transactions store and database repositories
 	txStore := new(transactions.TxStore)
 	txStore.DB = db
 
-	// 3. setup repositories
+	//! 3. setup repositories
 	accRepo := accountRepo.New(db)
 	entryRepo := entryRepo.New(db)
 	transferRepo := transferRepo.New(db)
 	userRepo := userRepo.New(db)
 	sessionRepo := sessionRepo.New(db)
 
-	// 4. setup services
-	accServiceConfig := accountService.AccountServiceConfig{AccRepo: accRepo, UserRepo: userRepo}
-	accService := accountService.New(&accServiceConfig)
-
-	configs, err := config.LoadPasetoTokenConfig("./config")
+	//! 4. setup services
+	pasetoConfigs, err := config.LoadPasetoTokenConfig("./config")
 	if err != nil {
 		fmt.Println("error trying to load config variables", err)
 	}
-	pasetoTokenAuth, err := paseto.New(configs.Paseto.SymmetricKey)
+	pasetoTokenAuth, err := paseto.New(pasetoConfigs.Paseto.SymmetricKey)
 	if err != nil {
 		log.Printf("error trying to create paseto token auth imp | %v \n", err)
 	}
+	accServiceConfig := accountService.AccountServiceConfig{AccRepo: accRepo, UserRepo: userRepo}
+	accService := accountService.New(&accServiceConfig)
+
 	authServiceConfig := authService.AuthServiceConfig{UserRepo: userRepo, SessionRepo: sessionRepo, TokenAuth: pasetoTokenAuth}
 	authService := authService.New(&authServiceConfig)
 
@@ -84,27 +89,49 @@ func main() {
 	userServiceConfig := userService.UserServiceConfig{UserRepository: userRepo}
 	userService := userService.New(&userServiceConfig)
 
-	// create a router
+	//! 5.create a router
 	router := rest.CreateRouter()
 
-	// inistantiate a handler to be up and waiting for mapping its methods to the routes when a request comes to one of them
+	//! 6. inistantiate a handler to be up and waiting for mapping its methods to the routes when a request comes to one of them
 	accountHandler.New(&accountHandler.AccountHandlerConfig{R: router, Service: accService, TokenProvider: pasetoTokenAuth})
 	authHandler.New(&authHandler.AuthHandlerConfig{R: router, AuthService: authService})
 	userHandler.New(&userHandler.UserHandlerConfig{R: router, UserService: userService, TokenProvider: pasetoTokenAuth})
 	moneyTxHandler.New(&moneyTxHandler.MoneyTxHandlerConfig{R: router, Service: moneyTransactionService, UserService: userService, TokenProvider: pasetoTokenAuth})
 
-	// create a server instance
-	server := rest.CreateServer(router)
+	//! ==> FOR HTTP REST BASED SERVER
+	// // create a server instance
+	// server := rest.CreateServer(router)
 
-	// run the server up
-	go rest.InitServer(server)
+	// // run the server up
+	// go rest.InitServer(server)
 
-	// listen for shutdown or any interrupts
-	quit := make(chan os.Signal)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	// wait for it
-	<-quit
-	// if we here, thats mean we will shut down the server gracefully
-	rest.ShutdownGracefully(server)
+	grpcServer, err := grpc.NewServer()
+	if err != nil {
+		os.Exit(1)
+	}
+	gRPC_default_server := gRPC.NewServer()
+	// register my implementation of grpc server which is (grpcServer)
+	pb.RegisterPaywiseServer(gRPC_default_server, grpcServer)
+	// register a reflection for our server so the clients can discover all the defined rpcs in our server
+	reflection.Register(gRPC_default_server)
+	// create a tcp listener for our grpc server
+	listener, err := net.Listen("tcp", grpcServer.Address)
+	if err != nil {
+		log.Fatalf("error trying to create a tcp listener for a grpc server : %v", err)
+	}
+	log.Printf("start the grpc server on port : %v", listener.Addr().String())
+	err = gRPC_default_server.Serve(listener)
+	if err != nil {
+		log.Fatal("cannot start grpc server")
+	}
+
+	// ! ==> FOR HTTP REST BASSED SERVER
+	// // listen for shutdown or any interrupts
+	// quit := make(chan os.Signal)
+	// signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// // wait for it
+	// <-quit
+	// // if we here, thats mean we will shut down the server gracefully
+	// rest.ShutdownGracefully(server)
 
 }

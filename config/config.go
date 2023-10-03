@@ -37,6 +37,48 @@ type PasetoTokenConfig struct {
 	}
 }
 
+type ServerConfig struct {
+	Server struct {
+		Port string
+	}
+}
+
+type GrpcServerConfig struct {
+	Grpcserver struct {
+		Port string
+	}
+}
+
+func LoadGrpcServerConfig(path string) (*GrpcServerConfig, error) {
+	viper.Reset()
+	config := new(GrpcServerConfig)
+
+	// tell viper from where to read
+	viper.AddConfigPath(path)
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+
+	// configure the feature to override the vars from the yaml file via the environment variables
+	viper.AutomaticEnv()
+	/*
+		viper reads the vars from the yaml file as following :
+		SERVER.PORT , but we can't define an env variable with the dot notation, so we will define it with _ and replace the default behaviour of viper
+	*/
+	viper.SetEnvKeyReplacer(strings.NewReplacer(`.`, `_`))
+
+	// read the configs
+	if err := viper.ReadInConfig(); err != nil {
+		log.Printf("error reading data from config file : %v \n", err)
+	}
+
+	if err := viper.Unmarshal(&config); err != nil {
+		log.Printf("error unmarshling the data from config file : %v \n", err)
+	}
+
+	// Add this after unmarshaling the configuration
+	return config, nil
+}
+
 func LoadPasetoTokenConfig(path string) (*PasetoTokenConfig, error) {
 	viper.Reset()
 	config := new(PasetoTokenConfig)
@@ -171,12 +213,6 @@ func LoadPostgresTestConfig() (*PGTestConfig, error) {
 		log.Printf("error unmarshling the data from config file : %v \n", err)
 	}
 	return config, nil
-}
-
-type ServerConfig struct {
-	Server struct {
-		Port string
-	}
 }
 
 func LoadServerConfigs(path string) (*ServerConfig, error) {

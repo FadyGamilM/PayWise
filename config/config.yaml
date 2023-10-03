@@ -20,3 +20,6 @@ paseto:
 
 server:
   port: "0.0.0.0:8000"
+
+grpcserver:
+  port: "0.0.0.0:9000"
