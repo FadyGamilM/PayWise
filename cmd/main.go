@@ -21,8 +21,8 @@ import (
 	"paywise/internal/repository/transactions"
 	transferRepo "paywise/internal/repository/transfer"
 	userRepo "paywise/internal/repository/user"
-	"paywise/internal/transport/grpc"
 	"paywise/internal/transport/grpc/pb"
+	_gRPC "paywise/internal/transport/grpc/server"
 	"paywise/internal/transport/rest"
 	accountHandler "paywise/internal/transport/rest/handlers/account"
 	authHandler "paywise/internal/transport/rest/handlers/auth"
@@ -105,10 +105,15 @@ func main() {
 	// // run the server up
 	// go rest.InitServer(server)
 
-	grpcServer, err := grpc.NewServer()
+	grpcServer, err := _gRPC.NewServer(
+		&_gRPC.GrpcServices{
+			AuthService: authService,
+		},
+	)
 	if err != nil {
 		os.Exit(1)
 	}
+	log.Printf("the grpc address ==> %v", grpcServer.Address)
 	gRPC_default_server := gRPC.NewServer()
 	// register my implementation of grpc server which is (grpcServer)
 	pb.RegisterPaywiseServer(gRPC_default_server, grpcServer)

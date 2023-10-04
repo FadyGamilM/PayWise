@@ -1,8 +1,9 @@
-package grpc
+package server
 
 import (
 	"log"
 	"paywise/config"
+	"paywise/internal/core"
 	"paywise/internal/transport/grpc/pb"
 )
 
@@ -12,15 +13,23 @@ type grpcServer struct {
 
 	// the port that our server will recieve requests on it
 	Address string
+
+	// all the services required for grpc server to fullfil the requests
+	services *GrpcServices
 }
 
-func NewServer() (*grpcServer, error) {
+type GrpcServices struct {
+	AuthService core.AuthService
+}
+
+func NewServer(gs *GrpcServices) (*grpcServer, error) {
 	configs, err := config.LoadGrpcServerConfig("./config")
 	if err != nil {
 		log.Printf("error trying to read grpc server config : %v\n", err)
 		return nil, err
 	}
 	return &grpcServer{
-		Address: configs.Grpcserver.Port,
+		Address:  configs.Grpcserver.Port,
+		services: gs,
 	}, nil
 }
